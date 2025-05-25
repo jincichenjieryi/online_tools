@@ -3,27 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>工具集主页</title>
+    <title>我的在线工具集</title>
     <style>
-        body { font-family: '微软雅黑', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f4f4f4; text-align: center; }
-        h1 { color: #333; }
-        .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); display: inline-block; }
-        ul { list-style-type: none; padding: 0; }
-        li {
-            margin: 25px 0; /* 示例：将上下间距增加到25px */
+        /* 基本的页面重置和字体设置 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: '微软雅黑', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f4f7f9; /* 整体背景色 */
+            overflow: hidden; /* 防止主页面出现滚动条 */
         }
-        a { text-decoration: none; color: #007bff; font-size: 1.2em; padding: 10px 15px; border: 1px solid #007bff; border-radius: 5px; transition: all 0.3s ease; }
-        a:hover { background-color: #007bff; color: white; }
+
+        /* 主容器，使用 Flexbox 实现左右布局 */
+        .main-container {
+            display: flex;
+            height: 100vh; /* 高度占满整个视口 */
+        }
+
+        /* 左侧导航栏样式 */
+        #sidebar {
+            width: 240px; /* 侧边栏宽度 */
+            background-color: #ffffff; /* 侧边栏背景色 */
+            border-right: 1px solid #e0e0e0; /* 右边框 */
+            padding: 20px 0; /* 上下内边距，左右由列表项控制 */
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05); /* 轻微的右侧阴影 */
+            overflow-y: auto; /* 如果菜单项过多，允许垂直滚动 */
+            transition: width 0.3s ease; /* 平滑过渡效果 */
+        }
+
+        #sidebar .sidebar-header {
+            padding: 0 20px 15px 20px; /* 内边距 */
+            margin-bottom: 15px; /* 与下方列表的间距 */
+            border-bottom: 1px solid #eeeeee; /* 底部边框 */
+        }
+
+        #sidebar .sidebar-header h2 {
+            margin: 0;
+            font-size: 1.5em; /* 标题字体大小 */
+            color: #333; /* 标题颜色 */
+            font-weight: 600;
+        }
+
+        #sidebar ul {
+            list-style-type: none; /* 移除列表默认样式 */
+            padding: 0;
+            margin: 0;
+        }
+
+        #sidebar li a {
+            display: block; /* 让链接占据整行 */
+            padding: 12px 20px; /* 内边距 */
+            text-decoration: none;
+            color: #455a64; /* 链接文字颜色 */
+            font-size: 0.95em; /* 字体大小 */
+            border-left: 3px solid transparent; /* 左侧指示条，默认透明 */
+            transition: background-color 0.2s ease, color 0.2s ease, border-left-color 0.2s ease; /* 过渡效果 */
+        }
+
+        #sidebar li a:hover {
+            background-color: #f0f4f7; /* 鼠标悬停背景色 */
+            color: #007bff; /* 鼠标悬停文字颜色 */
+        }
+
+        #sidebar li a.active {
+            background-color: #e6f2ff; /* 激活状态背景色 */
+            color: #007bff; /* 激活状态文字颜色 */
+            font-weight: 600; /* 激活状态字体加粗 */
+            border-left-color: #007bff; /* 激活状态左侧指示条颜色 */
+        }
+
+        /* 右侧内容区域样式 */
+        #content-area {
+            flex-grow: 1; /* 占据剩余空间 */
+            overflow: hidden; /* 确保 iframe 正确显示，不产生额外滚动条 */
+            background-color: #ffffff; /* 内容区域背景色 */
+        }
+
+        #content-iframe {
+            width: 100%;
+            height: 100%;
+            border: none; /* 移除 iframe 默认边框 */
+        }
+
+        /* 响应式设计：小屏幕下可以考虑隐藏侧边栏或改变布局 */
+        @media (max-width: 768px) {
+            /*
+            #sidebar {
+                width: 60px; // 或者完全隐藏
+            }
+            #sidebar .sidebar-header h2, #sidebar li a span {
+                display: none; // 如果只显示图标
+            }
+            */
+            /* 这里可以添加更多针对小屏幕的样式调整 */
+        }
+
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>水利工程设计在线工具集 🛠️</h1>
-        <p>请选择您要使用的工具：</p>
-        <ul>
-            <li><a href="station_convert.html">数据格式转换工具</a></li>
-            <li><a href="flow_calculator.html">断面水位流量关系计算器</a></li>
-        </ul>
+    <div class="main-container">
+        <nav id="sidebar">
+            <div class="sidebar-header">
+                <h2>工具导航</h2>
+            </div>
+            <ul>
+                <li><a href="javascript:void(0);" onclick="loadContent('intro.html', this);" class="active"><span>网页介绍</span></a></li>
+                <li><a href="javascript:void(0);" onclick="loadContent('station_converter.html', this);"><span>数据转换工具</span></a></li>
+                <li><a href="javascript:void(0);" onclick="loadContent('flow_calculator.html', this);"><span>流量计算工具</span></a></li>
+                </ul>
+        </nav>
+
+        <main id="content-area">
+            <iframe id="content-iframe" src="intro.html" name="contentFrame" title="内容区域">
+                <p>您的浏览器不支持 iframe，请升级浏览器或使用其他浏览器访问。</p>
+            </iframe>
+        </main>
     </div>
+
+    <script>
+        // 函数：加载指定页面到 iframe，并更新菜单激活状态
+        function loadContent(pageUrl, linkElement) {
+            const iframe = document.getElementById('content-iframe');
+            if (iframe) {
+                iframe.src = pageUrl; // 设置 iframe 的 src 来加载新页面
+            }
+
+            // 处理菜单项的 'active' 状态
+            // 1. 移除所有链接的 'active' 类
+            const links = document.querySelectorAll('#sidebar li a');
+            links.forEach(function(link) {
+                link.classList.remove('active');
+            });
+
+            // 2. 给当前点击的链接添加 'active' 类
+            if (linkElement) {
+                linkElement.classList.add('active');
+            }
+        }
+
+        // 页面加载完成后，确保默认选中的菜单项（网页介绍）的内容被加载
+        // 并且其链接保持激活状态（虽然HTML中已设置，但JS可以作为双重保障）
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstActiveLink = document.querySelector('#sidebar li a.active');
+            if (firstActiveLink) {
+                // 如果需要确保初始加载逻辑执行，可以取消下面这行的注释
+                // loadContent(firstActiveLink.getAttribute('onclick').match(/'([^']+)'/)[1], firstActiveLink);
+            }
+        });
+    </script>
 </body>
 </html>
