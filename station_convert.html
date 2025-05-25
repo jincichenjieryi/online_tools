@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>桩号与标签数据转换工具</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            width: 95%;
+            max-width: 1600px; 
+        }
+
+        h1 {
+            text-align: center;
+            color: #0056b3;
+            margin-bottom: 20px;
+        }
+
+        .data-format-examples {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .format-example {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 5px;
+            border-radius: 4px;
+            width: 23%; 
+            min-width: 200px; 
+            background-color: #f9f9f9;
+            box-sizing: border-box; 
+        }
+
+        .format-example h3 {
+            margin-top: 0;
+            font-size: 1em;
+            color: #0056b3;
+            text-align: center; 
+        }
+
+        .format-example pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 0.85em;
+            max-height: 150px;
+            overflow-y: auto;
+            background-color: #fff;
+            padding: 5px;
+            border: 1px solid #eee;
+        }
+
+        .io-area {
+            display: flex;
+            justify-content: space-between; 
+            margin-bottom: 20px;
+            flex-wrap: nowrap; 
+        }
+
+        .input-section, .controls-section, .output-section {
+            width: 32%; 
+            min-width: 280px; 
+            margin-bottom: 10px; 
+            padding: 10px;
+            box-sizing: border-box; 
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .input-section h3, .output-section h3 {
+            text-align: center; 
+        }
+
+        .controls-section {
+             align-items: center; 
+        }
+        .controls-section .actions { 
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+
+
+        textarea {
+            width: 100%;
+            height: 250px; 
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            flex-grow: 1; 
+        }
+
+        .options, .actions {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            width: 100%; 
+        }
+        .options fieldset {
+            margin-bottom:10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .options legend {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .radio-group label, .checkbox-group label {
+            margin-right: 15px;
+            cursor: pointer;
+            display: block; 
+            margin-bottom: 5px;
+        }
+        .checkbox-group input[type="text"] {
+            margin-left: 5px;
+            width: 80px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+            margin: 5px 0; 
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+        
+        #clearInputBtn {
+            background-color: #6c757d; 
+        }
+        #clearInputBtn:hover {
+            background-color: #545b62;
+        }
+        #copyOutputBtn {
+            background-color: #28a745; 
+        }
+        #copyOutputBtn:hover {
+            background-color: #1e7e34;
+        }
+
+
+        #detectionStatus {
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #28a745; 
+            min-height: 1.2em; 
+        }
+        #detectionStatus.error {
+            color: #dc3545; 
+        }
+
+        @media (max-width: 1200px) { 
+            .data-format-examples .format-example {
+                width: 45%;
+                margin-bottom: 10px;
+            }
+        }
+        @media (max-width: 1000px) { 
+            .io-area {
+                flex-wrap: wrap; 
+            }
+            .input-section, .controls-section, .output-section {
+                width: 100%; 
+                margin-bottom: 20px;
+            }
+            .controls-section{
+                order: 2; 
+            }
+            .input-section{
+                order:1;
+            }
+            .output-section{
+                order:3;
+            }
+        }
+        @media (max-width: 600px) {
+             .data-format-examples .format-example {
+                width: 100%; 
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>桩号数据转换工具</h1>
+
+        <div class="data-format-examples">
+            <div class="format-example">
+                <h3>格式1</h3>
+                <pre>YX41+300	0	185.03
+YX41+300	10.16	180.53</pre>
+            </div>
+            <div class="format-example">
+                <h3>格式2</h3> <pre>41300	0	185.03
+41300	10.16	180.53</pre>
+            </div>
+            <div class="format-example">
+                <h3>格式3</h3> <pre>YX41+300	
+0	185.03
+10.16	180.53</pre>
+            </div>
+            <div class="format-example">
+                <h3>格式4</h3> <pre>ABC	
+0	185.03
+10.16	180.53
+123_XYZ
+5.5	177.0</pre>
+            </div>
+        </div>
+
+        <div class="io-area">
+            <div class="input-section">
+                <h3>输入数据</h3>
+                <textarea id="inputText" placeholder="在此输入数据...程序将尝试自动识别格式。"></textarea>
+                 <button id="clearInputBtn">清空输入框</button>
+            </div>
+
+            <div class="controls-section">
+                <h3>转换选项</h3>
+                 <div id="detectionStatus"></div>
+                <div class="options">
+                    <fieldset>
+                        <legend>前缀和小数位数</legend>
+                        <div class="checkbox-group">
+                            <label>
+                                <input type="checkbox" id="applyPrefix"> 添加前缀:
+                                <input type="text" id="prefixText" disabled>
+                            </label>
+                        </div>
+                        <div class="checkbox-group">
+                            <label>
+                                <input type="checkbox" id="applyDecimals"> 小数位数:
+                                <input type="text" id="decimalPlaces" placeholder="例如: 2" disabled>
+                            </label>
+                        </div>
+                    </fieldset>
+                    <fieldset id="outputFormatOptions"> 
+                        <legend>选择输出的数据格式:</legend>
+                        <div class="radio-group">
+                            <label><input type="radio" name="outputFormat" value="1" checked> 格式1</label>
+                            <label><input type="radio" name="outputFormat" value="2"> 格式2</label> 
+                            <label><input type="radio" name="outputFormat" value="3"> 格式3</label>     </div>
+                    </fieldset>
+                </div>
+                <div class="actions">
+                    <button id="convertBtn">开始转换</button>
+                </div>
+            </div>
+
+            <div class="output-section">
+                <h3>输出结果</h3>
+                <textarea id="outputText" readonly placeholder="转换结果将显示在此..."></textarea>
+                <button id="copyOutputBtn">复制结果</button> 
+            </div>
+        </div>
+        
+    </div>
+
+    <script>
+        // --- 常量定义 ---
+        const AUTHOR_TEXT = "HTML/JavaScript 版本由 AI 根据 Python 版本逻辑重构。\n原作者: 5-0";
+        // Input Format Identifiers (Renumbered)
+        const FORMAT_TYPE_STATION_K_PLUS_M = 1;         // Standard K+M (e.g., YX41+300)
+        const FORMAT_TYPE_STATION_NUMERIC_M = 2;        // Numeric Meters (e.g., 41300) - Formerly 3
+        const FORMAT_TYPE_STATION_K_PLUS_M_GROUPED = 3; // Grouped K+M (e.g., YX41+300 on one line, data on next) - Formerly 4
+        const FORMAT_TYPE_GENERIC_TAG_GROUPED = 4;      // Grouped Generic Tag (e.g., ABC on one line, data on next) - Formerly 5
+
+
+        // --- DOM元素获取 ---
+        const inputTextElem = document.getElementById('inputText');
+        const outputTextElem = document.getElementById('outputText');
+        const convertBtn = document.getElementById('convertBtn');
+        const clearInputBtn = document.getElementById('clearInputBtn');
+        const copyOutputBtn = document.getElementById('copyOutputBtn'); 
+        
+        const applyPrefixCheckbox = document.getElementById('applyPrefix');
+        const prefixTextElem = document.getElementById('prefixText');
+        const applyDecimalsCheckbox = document.getElementById('applyDecimals');
+        const decimalPlacesElem = document.getElementById('decimalPlaces');
+        const detectionStatusElem = document.getElementById('detectionStatus');
+        
+        // --- 事件监听 ---
+        applyPrefixCheckbox.addEventListener('change', function() {
+            prefixTextElem.disabled = !this.checked;
+            if (!this.checked) prefixTextElem.value = '';
+        });
+
+        applyDecimalsCheckbox.addEventListener('change', function() {
+            decimalPlacesElem.disabled = !this.checked;
+            if (!this.checked) decimalPlacesElem.value = '';
+        });
+
+        clearInputBtn.addEventListener('click', function() {
+            inputTextElem.value = '';
+            outputTextElem.value = '';
+            detectionStatusElem.textContent = '';
+        });
+
+        copyOutputBtn.addEventListener('click', function() {
+            if (outputTextElem.value) {
+                outputTextElem.select(); 
+                try {
+                    const successful = document.execCommand('copy'); 
+                    if (successful) {
+                        const originalText = copyOutputBtn.textContent;
+                        copyOutputBtn.textContent = '已复制!';
+                        setTimeout(() => {
+                            copyOutputBtn.textContent = originalText;
+                        }, 2000); 
+                    } else {
+                        alert('复制失败，您的浏览器可能不支持此操作。');
+                    }
+                } catch (err) {
+                    alert('复制时发生错误。');
+                }
+                window.getSelection().removeAllRanges(); 
+            } else {
+                const originalText = copyOutputBtn.textContent;
+                copyOutputBtn.textContent = '无内容可复制';
+                 setTimeout(() => {
+                    copyOutputBtn.textContent = originalText;
+                }, 2000);
+            }
+        });
+        
+        // --- 自动格式识别函数 ---
+        function autoDetectInputFormat(inputText) {
+            const lines = inputText.trim().split('\n').map(line => line.trim()).filter(line => line);
+            if (lines.length === 0) return null;
+
+            const colCounts = lines.map(line => line.split(/\s+/).filter(Boolean).length);
+
+            const format1StakePattern = /^[A-Za-z]*\d*\+\d+(\.\d+)?$/; 
+            const format2NumericStakePattern = /^\d+(\.\d+)?$/; // Renamed from format3StakePattern
+            const genericTagHeuristicPattern = /^[A-Za-z_][A-Za-z0-9_.\-]*$|^\d+$|^\S+$/; 
+
+            // --- Try to detect Grouped Formats (New 3 and 4) structure ---
+            let groupHeaders = []; 
+            let hasGroupStructure = false;
+            let linesInGroupStructure = 0;
+
+            for (let i = 0; i < lines.length; i++) {
+                if (colCounts[i] === 1) {
+                    if (i + 1 < lines.length && colCounts[i+1] === 2) { 
+                        hasGroupStructure = true;
+                        groupHeaders.push(lines[i].trim());
+                        linesInGroupStructure++; 
+                        let j = i + 1;
+                        while (j < lines.length && colCounts[j] === 2) {
+                            const dataCols = lines[j].split(/\s+/).filter(Boolean);
+                            if (isNaN(parseFloat(dataCols[0])) || isNaN(parseFloat(dataCols[1]))) {
+                                hasGroupStructure = false; 
+                                break;
+                            }
+                            linesInGroupStructure++;
+                            j++;
+                        }
+                        if (!hasGroupStructure) break; 
+                        i = j - 1; 
+                    }
+                }
+            }
+            
+            if (hasGroupStructure && groupHeaders.length > 0 && (linesInGroupStructure / lines.length > 0.6)) {
+                let stationHeaderCount = 0;
+                let genericHeaderCount = 0;
+                for (const header of groupHeaders) {
+                    // A header is a station if it's F1-like or F2-like (numeric)
+                    if (format1StakePattern.test(header) || format2NumericStakePattern.test(header)) {
+                        stationHeaderCount++;
+                    } else if (genericTagHeuristicPattern.test(header)) { 
+                        genericHeaderCount++;
+                    } else { 
+                        return null;
+                    }
+                }
+
+                if (stationHeaderCount === groupHeaders.length) return FORMAT_TYPE_STATION_K_PLUS_M_GROUPED; // New Format 3
+                if (genericHeaderCount === groupHeaders.length) return FORMAT_TYPE_GENERIC_TAG_GROUPED;   // New Format 4
+                return null; 
+            }
+
+            // --- Fallback to Format 1 / Format 2 (Numeric) Detection ---
+            let f1CandidateCount = 0;
+            let f2CandidateCount = 0; // Was f3CandidateCount
+            let totalValidLinesForF1F2 = 0; // Was totalValidLinesForF1F3
+
+            for (let i=0; i<lines.length; i++) {
+                if (colCounts[i] === 0) continue;
+                
+                const firstColContent = lines[i].split(/\s+/).filter(Boolean)[0];
+                if (!firstColContent) continue; 
+
+                if (colCounts[i] === 1 || colCounts[i] === 3) {
+                    totalValidLinesForF1F2++;
+                    if (format1StakePattern.test(firstColContent)) { 
+                        f1CandidateCount++;
+                    } else if (!firstColContent.includes('+') && format2NumericStakePattern.test(firstColContent)) { 
+                        f2CandidateCount++;
+                    }
+                }
+            }
+            
+            if (totalValidLinesForF1F2 === 0) return null;
+
+            if (f1CandidateCount > 0 && f1CandidateCount === totalValidLinesForF1F2) return FORMAT_TYPE_STATION_K_PLUS_M; // Format 1
+            if (f2CandidateCount > 0 && f2CandidateCount === totalValidLinesForF1F2) return FORMAT_TYPE_STATION_NUMERIC_M; // New Format 2
+            
+            return null; 
+        }
+
+
+        convertBtn.addEventListener('click', function() {
+            const iptDataStr = inputTextElem.value;
+            const optNum = parseInt(document.querySelector('input[name="outputFormat"]:checked').value);
+
+            const prefixVal = prefixTextElem.value;
+            const varPrefixCheckVal = applyPrefixCheckbox.checked;
+            
+            let decimalPlacesVal = parseInt(decimalPlacesElem.value);
+            if (isNaN(decimalPlacesVal) || decimalPlacesElem.value.trim() === "") {
+                decimalPlacesVal = 0; 
+            }
+            const varDecimalPlacesCheckVal = applyDecimalsCheckbox.checked;
+
+            const trimmedInput = iptDataStr.trim().toLowerCase();
+            if (trimmedInput === "author" || trimmedInput === "作者") { 
+                outputTextElem.value = AUTHOR_TEXT;
+                detectionStatusElem.textContent = '';
+                return;
+            }
+            
+            let detectedInputFormatType; 
+            detectedInputFormatType = autoDetectInputFormat(iptDataStr);
+
+            if (detectedInputFormatType !== null) {
+                let formatName = `格式 ${detectedInputFormatType}`; // Default display
+                if (detectedInputFormatType === FORMAT_TYPE_STATION_K_PLUS_M) formatName = "标准桩号格式 (1)";
+                else if (detectedInputFormatType === FORMAT_TYPE_STATION_NUMERIC_M) formatName = "数值桩号格式 (2)";
+                else if (detectedInputFormatType === FORMAT_TYPE_STATION_K_PLUS_M_GROUPED) formatName = "标准桩号组格式 (3)";
+                else if (detectedInputFormatType === FORMAT_TYPE_GENERIC_TAG_GROUPED) formatName = "通用标签组格式 (4)";
+
+
+                detectionStatusElem.textContent = `自动识别输入为: ${formatName}`;
+                detectionStatusElem.className = ''; 
+            } else {
+                detectionStatusElem.textContent = `未能自动识别输入格式。请确保数据符合示例之一。`;
+                detectionStatusElem.className = 'error';
+                outputTextElem.value = ""; 
+                return; 
+            }
+
+            let actualPrefix = prefixVal;
+            let actualVarPrefixCheck = varPrefixCheckVal;
+
+            if ((detectedInputFormatType === FORMAT_TYPE_STATION_K_PLUS_M || detectedInputFormatType === FORMAT_TYPE_STATION_K_PLUS_M_GROUPED) && 
+                !varPrefixCheckVal && iptDataStr.trim() !== "") {
+                const firstLineData = iptDataStr.trim().split('\n')[0].split(/\s+/)[0];
+                if (firstLineData) { 
+                    const match = /^[A-Za-z]+(?=\d+\+\d+)/.exec(firstLineData); 
+                    if (match && match[0]) {
+                        actualPrefix = match[0];
+                        actualVarPrefixCheck = true;
+                        prefixTextElem.value = actualPrefix;
+                        applyPrefixCheckbox.checked = true;
+                        prefixTextElem.disabled = false;
+                    }
+                }
+            }
+
+
+            const result = stationConvertProcess(
+                iptDataStr,
+                detectedInputFormatType, 
+                optNum, 
+                actualPrefix,
+                actualVarPrefixCheck,
+                decimalPlacesVal,
+                varDecimalPlacesCheckVal
+            );
+            outputTextElem.value = result;
+        });
+
+        class StationConvertJS {
+            constructor(iptStr) {
+                this.inputDataList = this._str2List(iptStr); 
+                this.processedData = []; 
+            }
+
+            _str2List(_str) {
+                const lines = _str.split('\n');
+                const dataList = [];
+                for (const line of lines) {
+                    if (line.trim()) {
+                        const lineList = line.split(/\s+/).filter(item => item.trim());
+                        if (lineList.length > 0) {
+                            dataList.push(lineList);
+                        }
+                    }
+                }
+                return dataList;
+            }
+
+            _customRound(number, digits = 0) {
+                if (typeof digits !== 'number' || isNaN(digits) || digits < 0) { 
+                    digits = 0;
+                }
+                const factor = Math.pow(10, digits);
+                return Math.round((number * factor) + Number.EPSILON) / factor;
+            }
+            
+            _parseStationString(stationStr) {
+                const match = /^[A-Za-z]*(\d+)\+(\d+(?:\.\d*)?)$/.exec(stationStr);
+                if (match) {
+                    return { km: parseInt(match[1]), m: parseFloat(match[2]) };
+                }
+                return null; 
+            }
+            _parseNumericMetersString(stationStr) { // For new Format 2 (old F3)
+                 if (!stationStr.includes('+') && /^\d+(\.\d+)?$/.test(stationStr)) {
+                    const numValue = parseFloat(stationStr);
+                    const km = Math.floor(numValue / 1000);
+                    const m = this._customRound(numValue - (km * 1000), 3); 
+                    return { km, m };
+                }
+                return null;
+            }
+
+
+            _fmtToStn(inputType) { 
+                this.processedData = [];
+                let currentHeader = null;
+
+                for (const lineColumns of this.inputDataList) { 
+                    if (inputType === FORMAT_TYPE_STATION_K_PLUS_M || inputType === FORMAT_TYPE_STATION_NUMERIC_M) { // F1 or New F2
+                        const stationStr = lineColumns[0];
+                        const offset = lineColumns.length > 1 ? lineColumns[1] : undefined;
+                        const elevation = lineColumns.length > 2 ? lineColumns[2] : undefined;
+                        let parsedStation = null;
+
+                        if (inputType === FORMAT_TYPE_STATION_K_PLUS_M) { // F1
+                            parsedStation = this._parseStationString(stationStr);
+                        } else { // New F2 (Numeric Meters)
+                            parsedStation = this._parseNumericMetersString(stationStr);
+                        }
+                        
+                        if (parsedStation) {
+                            this.processedData.push({ 
+                                type: 'station', 
+                                km: parsedStation.km, 
+                                m: parsedStation.m, 
+                                offset, 
+                                elevation 
+                            });
+                        } else {
+                             console.warn(`Format ${inputType}: Could not parse station: ${stationStr}`);
+                        }
+                    } else if (inputType === FORMAT_TYPE_STATION_K_PLUS_M_GROUPED || inputType === FORMAT_TYPE_GENERIC_TAG_GROUPED) { // New F3 or New F4
+                        if (lineColumns.length === 1) { 
+                            currentHeader = lineColumns[0].trim();
+                            if (inputType === FORMAT_TYPE_STATION_K_PLUS_M_GROUPED && // New F3
+                                !currentHeader.includes('+') && 
+                                /^[A-Za-z]+\d*(\.\d*)?$/.test(currentHeader)) {
+                                const matchPrefixKm = /^([A-Za-z]*)([0-9.]+)?$/.exec(currentHeader);
+                                if (matchPrefixKm) {
+                                    const textPrefix = matchPrefixKm[1] || "";
+                                    const numPart = matchPrefixKm[2] || "0";
+                                    currentHeader = `${textPrefix}${numPart}+000`;
+                                } else {
+                                     currentHeader = `${currentHeader}+000`; 
+                                }
+                            }
+                        } else if (lineColumns.length >= 2 && currentHeader !== null) { 
+                            const offset = lineColumns[0];
+                            const elevation = lineColumns[1];
+                            if (inputType === FORMAT_TYPE_GENERIC_TAG_GROUPED) { // New F4
+                                this.processedData.push({ type: 'genericTag', tag: currentHeader, offset, elevation });
+                            } else { // New F3 (Station Grouped)
+                                const parsedStation = this._parseStationString(currentHeader); // Header should be K+M like for F3
+                                if (parsedStation) {
+                                    this.processedData.push({
+                                        type: 'station',
+                                        km: parsedStation.km,
+                                        m: parsedStation.m,
+                                        offset,
+                                        elevation
+                                    });
+                                } else {
+                                     console.warn(`Format ${FORMAT_TYPE_STATION_K_PLUS_M_GROUPED}: Could not parse station header: ${currentHeader}`);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            _applyDecimalPlaces(dataItem, decimalPlacesVal) { 
+                if (dataItem.type === 'station' && dataItem.m !== undefined) {
+                    try {
+                        let meterVal = parseFloat(dataItem.m);
+                        if (isNaN(meterVal)) return;
+
+                        let roundedMeter = this._customRound(meterVal, decimalPlacesVal);
+                        
+                        if (roundedMeter >= 1000) {
+                            dataItem.km = (dataItem.km || 0) + Math.floor(roundedMeter / 1000); 
+                            roundedMeter = this._customRound(roundedMeter % 1000, decimalPlacesVal); 
+                        }
+                        dataItem.m = roundedMeter;
+                    } catch (e) { /* ignore error */ }
+                }
+            }
+
+
+            _stnToFmt(outputFormatNum, prefix, applyPrefixFlag, applyDecimalsFlag, decimalPlacesVal) {
+                let optList = [];
+                const actualPrefix = applyPrefixFlag ? prefix : "";
+
+                if (!this.processedData || this.processedData.length === 0) return "";
+
+                if (applyDecimalsFlag) {
+                    this.processedData.forEach(item => this._applyDecimalPlaces(item, decimalPlacesVal));
+                }
+
+                for (let item of this.processedData) {
+                    if (item.type === 'station') {
+                        let { km, m, offset, elevation } = item;
+                        if (km === undefined || m === undefined) continue; 
+
+                        let meterStr = String(m);
+                        let meterFormattedForOutput1; // For K+M output (Output F1 or F3 header)
+                        
+                        let [meterIntPart, meterDecPart] = meterStr.split('.');
+                        meterIntPart = meterIntPart.padStart(3, '0'); 
+                        meterFormattedForOutput1 = meterIntPart + (meterDecPart !== undefined ? '.' + meterDecPart : '');
+                        if (meterFormattedForOutput1.includes('.') && parseFloat(meterFormattedForOutput1.split('.')[1]) === 0) {
+                           meterFormattedForOutput1 = meterFormattedForOutput1.split('.')[0];
+                        }
+
+                        if (outputFormatNum === FORMAT_TYPE_STATION_K_PLUS_M) { // Output as F1
+                            const stationStrOutput = `${actualPrefix}${km}+${meterFormattedForOutput1}`;
+                            if (offset !== undefined && elevation !== undefined) { 
+                                optList.push([stationStrOutput, String(offset), String(elevation)]);
+                            } else { 
+                                optList.push([stationStrOutput]);
+                            }
+                        } else if (outputFormatNum === FORMAT_TYPE_STATION_NUMERIC_M) { // Output as F2 (Numeric)
+                            const totalMeters = km * 1000 + m;
+                            let finalPrecision = applyDecimalsFlag ? decimalPlacesVal : 3; 
+                            let stationValStr = String(this._customRound(totalMeters, finalPrecision)); 
+                            
+                            if (m === Math.floor(m) && !applyDecimalsFlag) { 
+                                 stationValStr = String(Math.floor(totalMeters));
+                            }
+
+                            if (offset !== undefined && elevation !== undefined) {
+                                optList.push([stationValStr, String(offset), String(elevation)]);
+                            } else {
+                                optList.push([stationValStr]);
+                            }
+                        }
+                    } else if (item.type === 'genericTag') {
+                        const { tag, offset, elevation } = item;
+                        // For generic tags, output format 1 (flat list) is primary.
+                        // Output format 2 (numeric) is not applicable, so treat as format 1.
+                        if (outputFormatNum === FORMAT_TYPE_STATION_K_PLUS_M || outputFormatNum === FORMAT_TYPE_STATION_NUMERIC_M) { 
+                            if (offset !== undefined && elevation !== undefined) {
+                                optList.push([tag, String(offset), String(elevation)]);
+                            } else { 
+                                optList.push([tag]);
+                            }
+                        }
+                    }
+                }
+                
+                // Handle grouped output (New Output Format 3, which was old F4)
+                if (outputFormatNum === FORMAT_TYPE_STATION_K_PLUS_M_GROUPED) { // Value is 3
+                    const optDict = {};
+                    for (let item of this.processedData) {
+                        let key;
+                        let dataPair;
+
+                        if (item.type === 'station' && item.km !== undefined && item.m !== undefined && item.offset !== undefined && item.elevation !== undefined) {
+                            let meterStr = String(item.m); 
+                            let [meterIntPart, meterDecPart] = meterStr.split('.');
+                            meterIntPart = meterIntPart.padStart(3, '0');
+                            let meterFormattedKey = meterIntPart + (meterDecPart !== undefined ? '.' + meterDecPart : '');
+                            if (meterFormattedKey.includes('.') && parseFloat(meterFormattedKey.split('.')[1]) === 0) {
+                                meterFormattedKey = meterFormattedKey.split('.')[0];
+                            }
+                            key = `${actualPrefix}${item.km}+${meterFormattedKey}`;
+                            dataPair = [String(item.offset), String(item.elevation)];
+                        } else if (item.type === 'genericTag' && item.offset !== undefined && item.elevation !== undefined) {
+                            key = item.tag;
+                            dataPair = [String(item.offset), String(item.elevation)];
+                        } else {
+                            continue; 
+                        }
+                        
+                        if (!optDict[key]) optDict[key] = [];
+                        optDict[key].push(dataPair);
+                    }
+                    return this._dic2Str(optDict);
+                }
+
+                return this._list2Str(optList);
+            }
+
+            _dic2Str(_dic) {
+                let optStr = "";
+                for (const key in _dic) {
+                    optStr += key + '\n';
+                    for (const point of _dic[key]) {
+                        optStr += String(point[0]) + '\t' + String(point[1]) + '\n';
+                    }
+                }
+                return optStr.trim();
+            }
+
+            _list2Str(_listData) {
+                let optStr = "";
+                for (const lineItem of _listData) {
+                    optStr += lineItem.map(String).join('\t') + '\n';
+                }
+                return optStr.trim();
+            }
+        }
+
+        function stationConvertProcess(iptDataStr, detectedInputFormatType, outputFormatNum, 
+                                     prefixVal = "", varPrefixCheckVal = false, 
+                                     decimalPlacesVal = 0, varDecimalPlacesCheckVal = false) {
+            if (!iptDataStr.trim()) {
+                return "";
+            }
+
+            const converter = new StationConvertJS(iptDataStr);
+            converter._fmtToStn(detectedInputFormatType); 
+            
+            const outputData = converter._stnToFmt(outputFormatNum, prefixVal, varPrefixCheckVal, varDecimalPlacesCheckVal, decimalPlacesVal);
+            return outputData;
+        }
+
+        (function setInitialState() {
+            const placeholderText = `示例输入 (格式1):\nYX41+300.333    0   185.03\nYX41+300  10.16   180.53\nK42+999.987   5   100.0`;
+            if (!inputTextElem.value) { 
+                 inputTextElem.placeholder = placeholderText;
+            }
+        })();
+
+    </script>
+</body>
+</html>
