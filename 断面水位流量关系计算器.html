@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>断面水位流量关系计算器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .input-label {
+            @apply block text-sm font-medium text-gray-700 mb-1;
+        }
+        .input-field {
+            @apply mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm;
+        }
+        .btn {
+            @apply px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white transition-colors duration-150;
+        }
+        .btn-primary {
+            @apply bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
+        }
+        .btn-secondary {
+            @apply bg-gray-200 hover:bg-gray-300 text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400;
+        }
+        .input-group-container {
+            @apply p-4 border border-gray-300 rounded-md shadow-sm;
+        }
+        /* Custom scrollbar for textarea and results */
+        textarea::-webkit-scrollbar, #resultsArea::-webkit-scrollbar {
+            width: 8px;
+        }
+        textarea::-webkit-scrollbar-track, #resultsArea::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        textarea::-webkit-scrollbar-thumb, #resultsArea::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        textarea::-webkit-scrollbar-thumb:hover, #resultsArea::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        #resultsTable th, #resultsTable td {
+            @apply px-3 py-2 text-left text-xs font-medium;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 sm:p-6 md:p-8">
+    <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-xl">
+        <h1 class="text-2xl font-semibold text-gray-800 mb-6 text-center">断面水位流量关系计算器</h1>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="md:col-span-2 input-group-container">
+                <div class="flex items-center mb-1"> 
+                    <h2 class="text-xl font-semibold text-gray-700">横断面数据 (平距 X 高程 Y)</h2>
+                    <button id="clearSectionDataButton" class="text-xl text-indigo-600 hover:text-indigo-800 font-medium px-2 py-1 rounded-md hover:bg-indigo-50 ml-2">清空输入</button> 
+                </div>
+                <textarea id="sectionData" 
+                            rows="12" 
+                            class="input-field h-64 md:h-auto resize-none" 
+                            placeholder="例如:
+0.000	84.813
+11.279	84.810
+...">
+</textarea>
+            </div>
+
+            <div class="md:col-span-1 flex flex-col justify-between">
+                <div class="input-group-container space-y-4">
+                    <div>
+                        <h2 class="text-base font-semibold text-gray-700">水位间隔 a (m)</h2>
+                        <input type="number" id="increment_a" value="1.0" step="0.1" class="input-field">
+                    </div>
+                    <div>
+                        <h2 class="text-base font-semibold text-gray-700">曼宁糙率系数 n</h2>
+                        <input type="number" id="manning_n" value="0.03" step="0.001" class="input-field">
+                    </div>
+                    <div>
+                        <h2 class="text-base font-semibold text-gray-700">河道坡降 i:</h2>
+                        <input type="number" id="slope_i" value="0.00177" step="0.00001" class="input-field">
+                    </div>
+                </div>
+                <div class="mt-6">
+                    <button id="calculateButton" class="btn btn-primary w-full border-2 border-indigo-500 hover:border-indigo-600">开始计算</button>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="flex items-center mb-3">
+                <h2 class="text-xl font-semibold text-gray-700">计算结果:</h2>
+                <button id="copyResultsButton" class="btn btn-secondary text-xl text-indigo-600 hover:text-indigo-800 font-medium px-2 py-1 rounded-md hover:bg-indigo-50 ml-2">复制结果</button>
+            </div>
+            <div id="statusMessage" class="text-sm text-red-600 mb-2 min-h-[1.25rem]"></div> 
+            <div id="resultsArea" class="bg-gray-50 p-3 border border-gray-300 rounded-md overflow-auto max-h-96">
+                <table id="resultsTable" class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th>水位 (m)</th>
+                            <th>过水断面面积 (m²)</th>
+                            <th>湿周 (m)</th>
+                            <th>水力半径 (m)</th>
+                            <th>流量 (m³/s)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        </tbody>
+                </table>
+                <p id="noResults" class="text-gray-500 text-center py-4">暂无结果。</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 辅助函数 ---
+        function polygonArea(vertices) {
+            let n = vertices.length;
+            if (n < 3) return 0.0;
+            let area = 0.0;
+            for (let i = 0; i < n; i++) {
+                let j = (i + 1) % n;
+                area += vertices[i].x * vertices[j].y;
+                area -= vertices[j].x * vertices[i].y;
+            }
+            return Math.abs(area) / 2.0;
+        }
+
+        function pathLength(points) {
+            let length = 0.0;
+            if (points.length < 2) return 0.0;
+            for (let i = 0; i < points.length - 1; i++) {
+                let p1 = points[i];
+                let p2 = points[i+1];
+                if (p1 && p2 && typeof p1.x === 'number' && typeof p1.y === 'number' && typeof p2.x === 'number' && typeof p2.y === 'number') {
+                     length += Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+                }
+            }
+            return length;
+        }
+
+        function parseSectionData(dataStr) {
+            const points = [];
+            const lines = dataStr.trim().split('\n');
+            for (const line of lines) {
+                const parts = line.trim().split(/\s+/);
+                if (parts.length === 2) {
+                    const x = parseFloat(parts[0]);
+                    const y = parseFloat(parts[1]);
+                    if (!isNaN(x) && !isNaN(y)) {
+                        points.push({ x: x, y: y });
+                    } else {
+                        throw new Error("断面数据格式错误: '" + line + "' 包含无效数字。");
+                    }
+                } else if (line.trim() !== "") {
+                    throw new Error("断面数据格式错误: '" + line + "' 应包含X和Y两个值。");
+                }
+            }
+            if (points.length < 2) {
+                 throw new Error("断面数据至少需要两个有效点。");
+            }
+            return points;
+        }
+
+        function calculateHydraulicProperties(sectionData, waterLevelH) {
+            const minHval = Math.min(...sectionData.map(p => p.y));
+            if (waterLevelH <= minHval + 1e-9) { // Add tolerance for comparison
+                return { area: 0.0, perimeter: 0.0, XL: null, XR: null, idxL: -1, idxR: -1 };
+            }
+
+            let XL = null, XR = null;
+            let idxPWetL = -1, idxPWetR = -1;
+
+            for (let i = 0; i < sectionData.length - 1; i++) {
+                const p1 = sectionData[i];
+                const p2 = sectionData[i+1];
+                if ((p1.y >= waterLevelH && p2.y < waterLevelH) || (p1.y < waterLevelH && p2.y >= waterLevelH)) {
+                    let pDryL, pWetL;
+                    if (p1.y >= waterLevelH) {
+                        pDryL = p1; pWetL = p2; idxPWetL = i + 1;
+                    } else {
+                        pDryL = p2; pWetL = p1; idxPWetL = i;
+                    }
+                    if (Math.abs(pWetL.y - pDryL.y) < 1e-9) {
+                        XL = pDryL.x;
+                    } else {
+                        XL = pDryL.x + (pWetL.x - pDryL.x) * (waterLevelH - pDryL.y) / (pWetL.y - pDryL.y);
+                    }
+                    break;
+                }
+            }
+
+            for (let i = sectionData.length - 1; i > 0; i--) {
+                const p1 = sectionData[i];
+                const p2 = sectionData[i-1];
+                if ((p1.y >= waterLevelH && p2.y < waterLevelH) || (p1.y < waterLevelH && p2.y >= waterLevelH)) {
+                     let pDryR, pWetR;
+                    if (p1.y >= waterLevelH) {
+                        pDryR = p1; pWetR = p2; idxPWetR = i - 1;
+                    } else {
+                        pDryR = p2; pWetR = p1; idxPWetR = i;
+                    }
+                    if (Math.abs(pWetR.y - pDryR.y) < 1e-9) {
+                        XR = pDryR.x;
+                    } else {
+                        XR = pDryR.x + (pWetR.x - pDryR.x) * (waterLevelH - pDryR.y) / (pWetR.y - pDryR.y);
+                    }
+                    break;
+                }
+            }
+            
+            if (XL === null || XR === null || idxPWetL === -1 || idxPWetR === -1 || idxPWetL > idxPWetR) {
+                if (sectionData.every(p => p.y < waterLevelH)) {
+                    XL = sectionData[0].x;
+                    XR = sectionData[sectionData.length - 1].x;
+                    
+                    let polygonVertices = [{x: XL, y: waterLevelH}];
+                    polygonVertices = polygonVertices.concat(sectionData.map(p => ({x: p.x, y: p.y})));
+                    polygonVertices.push({x: XR, y: waterLevelH});
+                    
+                    const area = polygonArea(polygonVertices);
+
+                    let bedPointsForPerimeter = [{x: XL, y: waterLevelH}];
+                    bedPointsForPerimeter = bedPointsForPerimeter.concat(sectionData.map(p => ({x: p.x, y: p.y})));
+                    bedPointsForPerimeter.push({x: XR, y: waterLevelH});
+                    
+                    let uniqueBedPoints = [];
+                    if (bedPointsForPerimeter.length > 0) {
+                        uniqueBedPoints.push(bedPointsForPerimeter[0]);
+                        for (let k = 1; k < bedPointsForPerimeter.length; k++) {
+                            if (Math.abs(bedPointsForPerimeter[k].x - bedPointsForPerimeter[k-1].x) > 1e-9 ||
+                                Math.abs(bedPointsForPerimeter[k].y - bedPointsForPerimeter[k-1].y) > 1e-9) {
+                                uniqueBedPoints.push(bedPointsForPerimeter[k]);
+                            }
+                        }
+                    }
+                    const perimeter = pathLength(uniqueBedPoints);
+                    return { area: area, perimeter: perimeter, XL: XL, XR: XR, idxL: 0, idxR: sectionData.length -1 };
+                }
+                return { area: 0.0, perimeter: 0.0, XL: XL, XR: XR, idxL: idxPWetL, idxR: idxPWetR };
+            }
+
+            let polygonVertices = [{ x: XL, y: waterLevelH }];
+            for (let k = idxPWetL; k <= idxPWetR; k++) {
+                polygonVertices.push({ x: sectionData[k].x, y: sectionData[k].y });
+            }
+            polygonVertices.push({ x: XR, y: waterLevelH });
+
+            let bedPointsForPerimeter = [{ x: XL, y: waterLevelH }];
+            for (let k = idxPWetL; k <= idxPWetR; k++) {
+                bedPointsForPerimeter.push({ x: sectionData[k].x, y: sectionData[k].y });
+            }
+            bedPointsForPerimeter.push({ x: XR, y: waterLevelH });
+            
+            let uniqueBedPoints = [];
+            if (bedPointsForPerimeter.length > 0) {
+                uniqueBedPoints.push(bedPointsForPerimeter[0]);
+                for (let k = 1; k < bedPointsForPerimeter.length; k++) {
+                    if (Math.abs(bedPointsForPerimeter[k].x - bedPointsForPerimeter[k-1].x) > 1e-9 ||
+                        Math.abs(bedPointsForPerimeter[k].y - bedPointsForPerimeter[k-1].y) > 1e-9) {
+                        uniqueBedPoints.push(bedPointsForPerimeter[k]);
+                    }
+                }
+            }
+
+            const area = polygonArea(polygonVertices);
+            const perimeter = pathLength(uniqueBedPoints);
+            return { area: area, perimeter: perimeter, XL: XL, XR: XR, idxL: idxPWetL, idxR: idxPWetR };
+        }
+        
+        function copyResultsToClipboard() {
+            const table = document.getElementById('resultsTable');
+            const rows = table.rows;
+            const statusMessageEl = document.getElementById('statusMessage');
+
+            if (rows.length <= 1 || (rows.length === 2 && table.tBodies[0].rows[0].cells.length === 0)) { // Header only or empty tbody
+                 statusMessageEl.textContent = "没有结果可供复制。";
+                 statusMessageEl.className = 'text-sm text-yellow-600 mb-2 min-h-[1.25rem]';
+                 setTimeout(() => { statusMessageEl.textContent = ''; statusMessageEl.className = 'text-sm text-red-600 mb-2 min-h-[1.25rem]'; }, 3000);
+                return;
+            }
+
+            let dataToCopy = "";
+            // Header from thead
+            if (table.tHead && table.tHead.rows.length > 0) {
+                const headerCells = table.tHead.rows[0].cells;
+                for (let i = 0; i < headerCells.length; i++) {
+                    dataToCopy += headerCells[i].textContent.trim() + (i === headerCells.length - 1 ? "" : "\t");
+                }
+                dataToCopy += "\n";
+            }
+
+            // Body from tbody
+            if (table.tBodies[0] && table.tBodies[0].rows.length > 0) {
+                for (let i = 0; i < table.tBodies[0].rows.length; i++) {
+                    const cells = table.tBodies[0].rows[i].cells;
+                    for (let j = 0; j < cells.length; j++) {
+                        dataToCopy += cells[j].textContent.trim() + (j === cells.length - 1 ? "" : "\t");
+                    }
+                    dataToCopy += "\n";
+                }
+            }
+            
+            if (dataToCopy.trim() === "") {
+                 statusMessageEl.textContent = "没有结果可供复制。";
+                 statusMessageEl.className = 'text-sm text-yellow-600 mb-2 min-h-[1.25rem]';
+                 setTimeout(() => { statusMessageEl.textContent = ''; statusMessageEl.className = 'text-sm text-red-600 mb-2 min-h-[1.25rem]'; }, 3000);
+                return;
+            }
+
+            const textArea = document.createElement("textarea");
+            textArea.value = dataToCopy;
+            textArea.style.position = "fixed"; 
+            textArea.style.opacity = "0";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                const msg = successful ? '结果已复制到剪贴板！' : '复制失败。';
+                statusMessageEl.textContent = msg;
+                statusMessageEl.className = successful ? 'text-sm text-green-600 mb-2 min-h-[1.25rem]' : 'text-sm text-red-600 mb-2 min-h-[1.25rem]';
+                setTimeout(() => { statusMessageEl.textContent = ''; statusMessageEl.className = 'text-sm text-red-600 mb-2 min-h-[1.25rem]'; }, 3000);
+            } catch (err) {
+                console.error('复制到剪贴板失败:', err);
+                statusMessageEl.textContent = '复制错误，请手动复制。';
+            }
+            document.body.removeChild(textArea);
+        }
+
+
+        // --- 主计算逻辑 ---
+        document.getElementById('calculateButton').addEventListener('click', function() {
+            const statusMessageEl = document.getElementById('statusMessage');
+            const resultsTableBody = document.getElementById('resultsTable').getElementsByTagName('tbody')[0];
+            const noResultsEl = document.getElementById('noResults');
+            
+            resultsTableBody.innerHTML = ''; 
+            statusMessageEl.textContent = '';
+            statusMessageEl.className = 'text-sm text-red-600 mb-2 min-h-[1.25rem]'; // Reset class
+            noResultsEl.style.display = 'none';
+
+            try {
+                const sectionDataStr = document.getElementById('sectionData').value;
+                const sectionPoints = parseSectionData(sectionDataStr);
+
+                const incrementA = parseFloat(document.getElementById('increment_a').value);
+                const manningN = parseFloat(document.getElementById('manning_n').value);
+                const slopeI = parseFloat(document.getElementById('slope_i').value);
+
+                if (isNaN(incrementA) || incrementA <= 0) throw new Error("水位间隔 a 必须是正数。");
+                if (isNaN(manningN) || manningN <= 0) throw new Error("曼宁系数 n 必须是正数。");
+                if (isNaN(slopeI) || slopeI < 0) throw new Error("河道坡降 i 必须是非负数。"); // Slope can be 0
+
+                const minBedElevation = Math.min(...sectionPoints.map(p => p.y));
+                let startWaterLevel = Math.floor(minBedElevation) + 1.0;
+
+                const leftBankElevation = sectionPoints[0].y;
+                const rightBankElevation = sectionPoints[sectionPoints.length - 1].y;
+                const maxAllowableSectionElevation = parseFloat(Math.min(leftBankElevation, rightBankElevation).toFixed(5));
+                
+                if (startWaterLevel > maxAllowableSectionElevation + 1e-9) {
+                    throw new Error(`起始计算水位 (${startWaterLevel.toFixed(3)}) 高于河岸允许的最大水位 (${maxAllowableSectionElevation.toFixed(3)})。无法计算。`);
+                }
+                
+                let resultsCount = 0;
+                let currentLevel = startWaterLevel;
+
+                while (true) {
+                    const calcLevel = parseFloat(currentLevel.toFixed(5)); 
+
+                    if (calcLevel > maxAllowableSectionElevation + 1e-9) { 
+                        break;
+                    }
+                    
+                    const { area, perimeter } = calculateHydraulicProperties(sectionPoints, calcLevel);
+
+                    let hydraulicRadius = 0.0;
+                    let flowQ = 0.0;
+
+                    if (perimeter > 1e-6) {
+                        hydraulicRadius = area / perimeter;
+                        if (area > 1e-6) {
+                            const R_pow_2_3 = Math.pow(hydraulicRadius, 2/3);
+                            const i_pow_1_2 = Math.sqrt(slopeI);
+                            flowQ = (1 / manningN) * area * R_pow_2_3 * i_pow_1_2;
+                        }
+                    }
+                    
+                    const row = resultsTableBody.insertRow();
+                    row.insertCell().textContent = calcLevel.toFixed(3);
+                    row.insertCell().textContent = area.toFixed(2);
+                    row.insertCell().textContent = perimeter.toFixed(2);
+                    row.insertCell().textContent = hydraulicRadius.toFixed(2);
+                    row.insertCell().textContent = flowQ.toFixed(2);
+                    resultsCount++;
+                    
+                    currentLevel = parseFloat((currentLevel + incrementA).toFixed(5));
+                }
+
+
+                if (resultsCount === 0) {
+                    noResultsEl.textContent = "在指定范围内没有计算出有效结果。请检查输入数据和参数。";
+                    noResultsEl.style.display = 'block';
+                }
+
+            } catch (e) {
+                statusMessageEl.textContent = '错误: ' + e.message;
+                noResultsEl.textContent = "计算出错，请检查输入。";
+                noResultsEl.style.display = 'block';
+                console.error(e);
+            }
+        });
+        
+        document.getElementById('clearSectionDataButton').addEventListener('click', function() {
+            document.getElementById('sectionData').value = '';
+            document.getElementById('statusMessage').textContent = '断面数据已清空。';
+            document.getElementById('statusMessage').className = 'text-sm text-blue-600 mb-2 min-h-[1.25rem]';
+             setTimeout(() => { document.getElementById('statusMessage').textContent = ''; document.getElementById('statusMessage').className = 'text-sm text-red-600 mb-2 min-h-[1.25rem]'; }, 3000);
+        });
+
+        document.getElementById('copyResultsButton').addEventListener('click', copyResultsToClipboard);
+
+        // 预填一些示例数据
+        document.getElementById('sectionData').value = `0.000	84.813
+11.279	84.810
+11.657	85.069
+13.462	84.694
+15.898	82.977
+17.978	81.900
+20.126	81.230
+22.555	80.770
+26.298	80.750
+30.061	80.950
+33.248	81.150
+35.808	81.900
+37.505	83.583
+38.550	83.958
+42.581	85.823
+44.542	85.927
+45.186	85.732
+54.934	85.830
+56.465	86.721
+59.923	86.734`;
+    </script>
+</body>
+</html>
