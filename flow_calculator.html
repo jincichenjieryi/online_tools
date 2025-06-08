@@ -9,14 +9,15 @@
     <style type="text/tailwindcss">
         body { 
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-color: #f3f4f6;
+            background: linear-gradient(135deg, #f0f9ff 0%, #2461e9 100%);
+            /* background: linear-gradient(135deg, #2461e9 100% , #f0f9ff 0%); */
         }
         .input-label { 
             @apply block text-sm font-medium text-gray-700 mb-1;
         }
         .input-field { 
-            @apply mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm 
-            focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 
+            @apply mt-1 block w-full px-3 py-2 bg-white border border-blue-200 rounded-md shadow-sm 
+            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
             transition duration-150 ease-in-out;
         }
         .button { 
@@ -25,48 +26,41 @@
             transition duration-150 ease-in-out;
         }
         .button-primary { 
-            @apply bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500 
-            transform hover:scale-105 transition-transform duration-150;
+            @apply bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 
+            focus:ring-blue-500 transform hover:scale-105 transition-transform duration-150
+            shadow-lg hover:shadow-xl;
         }
         .button-secondary { 
-            @apply bg-gray-600 hover:bg-gray-700 focus:ring-gray-500
-            transform hover:scale-105 transition-transform duration-150;
+            @apply bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 
+            focus:ring-gray-500 transform hover:scale-105 transition-transform duration-150
+            shadow-lg hover:shadow-xl;
         }
         .button-small { 
             @apply px-2 py-1 text-xs;
         }
         #crossSectionCanvas { 
-            @apply border-2 border-gray-200 rounded-lg shadow-lg bg-white;
+            @apply border-2 border-blue-200 rounded-lg shadow-lg bg-white;
             image-rendering: crisp-edges;
             image-rendering: pixelated;
         }
-        .table-wrapper {
-            @apply mt-8 bg-white rounded-lg shadow-lg overflow-hidden;
-        }
-        .table-header {
-            @apply px-6 py-4 bg-white border-b border-gray-200;
-        }
-        .table-container {
-            @apply overflow-x-auto;
-        }
         table {
-            @apply min-w-full divide-y divide-gray-200;
+            @apply min-w-full divide-y divide-blue-200;
         }
         thead {
-            @apply bg-gray-50;
+            @apply bg-blue-50;
         }
         th {
-            @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider 
-            border-b border-gray-200 bg-gray-50 sticky top-0;
+            @apply px-4 py-3 text-left text-xs font-medium text-blue-900 uppercase tracking-wider 
+            border-b border-blue-200 bg-blue-50 sticky top-0;
         }
         td {
-            @apply px-6 py-4 whitespace-nowrap text-sm text-gray-600 border-b border-gray-200;
+            @apply px-4 py-4 whitespace-nowrap text-sm text-gray-600 border-b border-blue-100;
         }
         tbody tr:nth-child(even) {
-            @apply bg-gray-50;
+            @apply bg-blue-50;
         }
         tbody tr:hover {
-            @apply bg-blue-50 transition-colors duration-150;
+            @apply bg-blue-100 transition-colors duration-150;
         }
         .remark-flood {
             @apply text-red-600 font-medium;
@@ -75,85 +69,111 @@
             @apply text-green-600 font-medium;
         }
         #noResultsMessage {
-            @apply text-center text-gray-500 py-8 bg-gray-50 border-t border-gray-200;
+            @apply text-center text-gray-500 py-8 bg-blue-50 border-t border-blue-200;
         }
         #statusMessage { 
             @apply mt-4 p-4 rounded-md text-sm font-medium shadow-sm;
         }
         .error { 
-            @apply bg-red-50 text-red-700 border border-red-200;
+            @apply text-red-700;
         }
         .success { 
-            @apply bg-green-50 text-green-700 border border-green-200;
+            @apply text-green-700;
         }
         .card {
-            @apply bg-white rounded-lg shadow-lg p-6 border border-gray-100;
+            @apply bg-white rounded-lg shadow-lg p-6 border border-blue-100
+            hover:shadow-xl transition-shadow duration-300;
         }
         .section-title {
-            @apply text-lg font-semibold text-gray-800 mb-4;
+            @apply text-lg font-semibold text-blue-900 mb-4 border-b border-blue-200 pb-2;
         }
         .checkbox-wrapper {
-            @apply flex items-center space-x-2 p-2 rounded-md hover:bg-gray-50 transition-colors duration-150;
+            @apply flex items-center space-x-2 p-2 rounded-md hover:bg-blue-50 transition-colors duration-150;
         }
         input[type="checkbox"] {
-            @apply w-4 h-4 text-indigo-600 border-gray-300 rounded 
-            focus:ring-indigo-500 cursor-pointer;
+            @apply w-4 h-4 text-blue-600 border-blue-300 rounded 
+            focus:ring-blue-500 cursor-pointer;
         }
         tbody tr {
             @apply cursor-pointer transition-all duration-150;
         }
         tbody tr.selected {
-            @apply bg-indigo-100 !important;
+            @apply bg-blue-200 !important;
         }
         tbody tr:hover:not(.selected) {
-            @apply bg-indigo-50;
+            @apply bg-blue-100;
         }
         .parameter-box {
-            @apply absolute bg-white/90 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-gray-200 
+            @apply absolute bg-white/90 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-blue-200 
             text-sm text-gray-700 transition-opacity duration-150;
         }
         .parameter-value {
-            @apply font-medium text-indigo-600;
+            @apply font-medium text-blue-600;
         }
         .main-container {
-            @apply grid grid-cols-3 gap-6;
+            @apply grid grid-cols-5 gap-6;
+            min-height: calc(100vh - 200px);
         }
         .left-section {
-            @apply col-span-2 space-y-6;
+            @apply col-span-3 space-y-6;
         }
         .right-section {
-            @apply col-span-1;
+            @apply col-span-2;
         }
         .params-section {
             @apply grid grid-cols-2 gap-6;
         }
         .params-box {
-            @apply bg-white/95 backdrop-blur-sm py-2 px-4 rounded-lg shadow-sm border border-gray-200 
-            flex items-center justify-start space-x-4 text-sm;
+            @apply bg-gradient-to-r from-blue-50 to-blue-100 backdrop-blur-sm py-2 px-4 rounded-lg 
+            shadow-sm border border-blue-200 flex items-center justify-start space-x-4 text-sm;
         }
         .param-item {
-            @apply flex items-center space-x-2 text-gray-600;
+            @apply flex items-center space-x-2 text-blue-800;
         }
         .param-value {
-            @apply font-medium text-indigo-600;
+            @apply font-medium text-blue-700;
+        }
+
+        .step-number {
+            @apply absolute -left-6 -top-6 w-12 h-12 rounded-full bg-blue-600 text-white
+            flex items-center justify-center font-bold text-2xl shadow-lg;
+        }
+        .highlight-section {
+            @apply relative bg-gradient-to-br from-blue-50 to-white rounded-xl p-6 shadow-lg
+            border-2 border-blue-200;
+        }
+        .param-inputs {
+            @apply space-y-3 mt-4;
+        }
+        .param-row {
+            @apply flex items-center gap-4;
+        }
+        .param-label {
+            @apply w-1/3 text-right font-medium text-blue-800 whitespace-nowrap;
+        }
+        .param-input {
+            @apply w-2/3 px-3 py-2 bg-white border border-blue-200 rounded-md shadow-sm 
+            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
+            transition duration-150 ease-in-out;
         }
     </style>
 </head>
 <body class="bg-gray-50 p-4 md:p-8">
     <div class="container mx-auto max-w-10xl">
-        <h1 class="text-3xl font-bold text-center text-indigo-700 mb-8">断面水位流量关系计算器</h1>
+        <h1 class="text-3xl font-bold text-center text-blue-700 mb-8">断面水位流量关系计算器</h1>
 
         <div class="main-container">
             <div class="left-section">
                 <!-- 上部参数区域 -->
                 <div class="params-section">
                     <!-- 基本参数 -->
-                    <div class="card">
-                        <h2 class="section-title">基本参数</h2>
+                    <div class="highlight-section h-full flex flex-col">
+                        <div class="step-number">1</div>
+                        <h2 class="section-title">基本参数输入</h2>
                         <div class="space-y-4">
                             <div>
-                                <label for="sectionData" class="input-label">断面数据 (X Y 坐标, 每行一对):</label>
-                                <textarea id="sectionData" rows="8" class="input-field font-mono text-sm" placeholder="例如:&#10;0 100&#10;10 95&#10;20 92&#10;30 95&#10;40 100">0	88
+                                <label for="sectionData" class="input-label">断面数据 (平距+高程，由换行符分隔):</label>
+                                <textarea id="sectionData" rows="7" class="input-field font-mono text-sm" placeholder="例如:&#10;0 100&#10;10 95&#10;20 92&#10;30 95&#10;40 100">0	88
 10	84.813
 40	84.813
 51.279	84.81
@@ -177,97 +197,104 @@
 99.923	86.734
 100	88</textarea>
                             </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label for="waterLevelInterval" class="input-label">水位间隔 (a, m):</label>
-                                    <input type="number" id="waterLevelInterval" class="input-field" value="0.5" step="0.1">
+                            <div class="param-inputs">
+                                <div class="param-row">
+                                    <label for="waterLevelInterval" class="param-label">水位间隔:</label>
+                                    <input type="number" id="waterLevelInterval" class="param-input" value="0.5" step="0.1">
                                 </div>
-                                <div>
-                                    <label for="manningN" class="input-label">曼宁糙率系数 (n):</label>
-                                    <input type="number" id="manningN" class="input-field" value="0.03" step="0.001">
+                                <div class="param-row">
+                                    <label for="manningN" class="param-label">曼宁糙率系数 (n):</label>
+                                    <input type="number" id="manningN" class="param-input" value="0.03" step="0.001">
                                 </div>
-                            </div>
-                            <div>
-                                <label for="channelSlope" class="input-label">河道坡降 (i, S0):</label>
-                                <input type="number" id="channelSlope" class="input-field" value="0.00177" step="0.0001">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 计算选项 -->
-                    <div class="card">
-                        <h2 class="section-title">计算选项</h2>
-                        <div class="space-y-4">
-                            <div class="checkbox-wrapper">
-                                <input id="useManualWaterLevels" type="checkbox">
-                                <label for="useManualWaterLevels" class="text-sm text-gray-700">手动设定计算水位范围</label>
-                            </div>
-                            <div id="manualWaterLevelControls" class="hidden space-y-4 pl-6">
-                                <div>
-                                    <label for="manualStartWL" class="input-label">手动起始水位 (m):</label>
-                                    <input type="number" id="manualStartWL" class="input-field" step="0.1" placeholder="例如: 80.0">
-                                </div>
-                                <div>
-                                    <label for="manualEndWL" class="input-label">手动终止水位 (m):</label>
-                                    <input type="number" id="manualEndWL" class="input-field" step="0.1" placeholder="例如: 88.0">
-                                </div>
-                            </div>
-
-                            <div class="checkbox-wrapper">
-                                <input id="considerFloodplain" type="checkbox">
-                                <label for="considerFloodplain" class="text-sm text-gray-700">考虑漫滩计算</label>
-                            </div>
-
-                            <div id="floodplainControls" class="hidden space-y-4 pl-6">
-                                <p class="text-sm text-gray-600 font-medium">调整主槽岸顶 (红点):</p>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="input-label">左岸顶:</label>
-                                        <div class="flex space-x-2">
-                                            <button id="leftBankPrev" class="button button-secondary button-small">← 左移</button>
-                                            <button id="leftBankNext" class="button button-secondary button-small">右移 →</button>
-                                        </div>
-                                        <p id="leftBankInfo" class="text-xs text-gray-500 mt-1">-</p>
-                                    </div>
-                                    <div>
-                                        <label class="input-label">右岸顶:</label>
-                                        <div class="flex space-x-2">
-                                            <button id="rightBankPrev" class="button button-secondary button-small">← 左移</button>
-                                            <button id="rightBankNext" class="button button-secondary button-small">右移 →</button>
-                                        </div>
-                                        <p id="rightBankInfo" class="text-xs text-gray-500 mt-1">-</p>
-                                    </div>
-                                </div>
-                                <p id="hBankfullInfo" class="text-sm font-medium text-indigo-600">临界岸顶高程: -</p>
-                            </div>
-
-                            <div class="pt-4 border-t border-gray-200 mt-4">
-                                <div class="flex space-x-4">
-                                    <button id="updatePreviewButton" class="button button-primary flex-1">
-                                        <span class="flex items-center justify-center">
-                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                            </svg>
-                                            预览/更新断面
-                                        </span>
-                                    </button>
-                                    <button id="calculateButton" class="button button-primary bg-green-600 hover:bg-green-700 flex-1">
-                                        <span class="flex items-center justify-center">
-                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                            </svg>
-                                            计算
-                                        </span>
-                                    </button>
+                                <div class="param-row">
+                                    <label for="channelSlope" class="param-label">河道坡降 (J):</label>
+                                    <input type="number" id="channelSlope" class="param-input" value="0.00177" step="0.0001">
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
+
+                                        <!-- 计算选项 -->
+                    <div class="highlight-section h-full flex flex-col">
+                        <div class="step-number">2</div>
+                        <h2 class="section-title">计算选项设置</h2>
+                        
+                        <!-- 选项内容区域 -->
+                        <div class="flex-grow space-y-4">
+                            <div class="input-group">
+                                <div class="checkbox-wrapper">
+                                    <input id="useManualWaterLevels" type="checkbox">
+                                    <label for="useManualWaterLevels" class="text-sm text-gray-700">手动设定计算水位范围</label>
+                                </div>
+                                <div id="manualWaterLevelControls" class="hidden flex space-x-4 items-end pl-6 mt-2">
+                                    <div>
+                                        <label for="manualStartWL" class="input-label">起始水位 (m):</label>
+                                        <input type="number" id="manualStartWL" class="input-field" step="0.1" placeholder="例如: 80.0">
+                                    </div>
+                                    <div>
+                                        <label for="manualEndWL" class="input-label">终止水位 (m):</label>
+                                        <input type="number" id="manualEndWL" class="input-field" step="0.1" placeholder="例如: 88.0">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <div class="checkbox-wrapper">
+                                    <input id="considerFloodplain" type="checkbox">
+                                    <label for="considerFloodplain" class="text-sm text-gray-700">考虑漫滩计算</label>
+                                </div>
+
+                                <div id="floodplainControls" class="hidden space-y-3 pl-6 mt-2">
+                                    <p class="text-sm text-blue-700 font-medium">调整主槽岸顶 (红点):</p>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="input-label">左岸顶:</label>
+                                            <div class="flex space-x-2">
+                                                <button id="leftBankPrev" class="button button-secondary button-small">← 左移</button>
+                                                <button id="leftBankNext" class="button button-secondary button-small">右移 →</button>
+                                            </div>
+                                            <p id="leftBankInfo" class="text-xs text-gray-500 mt-1">-</p>
+                                        </div>
+                                        <div>
+                                            <label class="input-label">右岸顶:</label>
+                                            <div class="flex space-x-2">
+                                                <button id="rightBankPrev" class="button button-secondary button-small">← 左移</button>
+                                                <button id="rightBankNext" class="button button-secondary button-small">右移 →</button>
+                                            </div>
+                                            <p id="rightBankInfo" class="text-xs text-gray-500 mt-1">-</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 按钮区域 - 始终在底部 -->
+                        <div class="mt-auto pt-4 border-t border-blue-200">
+                            <div class="flex space-x-4">
+                                <button id="updatePreviewButton" class="button button-primary flex-1">
+                                    <span class="flex items-center justify-center">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                        </svg>
+                                        预览/更新断面
+                                    </span>
+                                </button>
+                                <button id="calculateButton" class="button button-primary bg-green-600 hover:bg-green-700 flex-1">
+                                    <span class="flex items-center justify-center">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                        </svg>
+                                        计算
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+            </div>
 
                 <!-- 下部绘图区域 -->
-                <div class="card">
-                    <div id="parameterDisplay" class="mb-4 hidden params-box">
+                <div class="highlight-section">
+                    <div id="parameterDisplay" class="absolute top-12 left-1/2 -translate-x-1/2 hidden params-box z-10">
                         <div class="param-item">
                             <span>过水面积:</span>
                             <span class="param-value" id="paramArea">-</span>
@@ -285,37 +312,62 @@
                         </div>
                     </div>
                     <canvas id="crossSectionCanvas" width="800" height="500" class="w-full h-auto"></canvas>
-                    <div id="statusMessage" class="mt-4"></div>
+                    <!-- <div id="statusMessage"></div> -->
                 </div>
-            </div>
+        </div>
 
-            <!-- 右侧结果表格 -->
+            <!-- 右侧结果区域 -->
             <div class="right-section">
-                <div class="table-wrapper h-full flex flex-col">
-                    <div class="table-header flex-none">
-                        <div class="flex justify-between items-center">
+                <div class="highlight-section" style="min-height: calc(100vh - 200px);">
+                    <div class="step-number">3</div>
+                    
+                    <!-- 标题和复制按钮 -->
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="flex items-baseline gap-1">
                             <h2 class="section-title mb-0">计算结果</h2>
-                            <div class="space-x-3">
-                                <button id="copyResultsButton" class="button button-secondary">
-                                    <span class="flex items-center">
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                                        </svg>
-                                        复制结果
-                                    </span>
+                            <div id="statusMessage"></div>
+                        </div>
+                        <button id="copyResultsButton" class="button button-secondary">
+                            <span class="flex items-center">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                </svg>
+                                复制结果
+                            </span>
+                        </button>
+                    </div>
+
+                    <!-- 查询功能区域 -->
+                    <div class="mt-2">
+                        <div class="mb-4 flex items-baseline gap-1">
+                            <h3 class="text-lg font-medium text-blue-700 mb-2">水位流量查询：</h3>
+                            <p id="queryResultText" class="text-sm text-gray-600 pl-1 hidden"></p>
+                        </div>
+                        <div class="space-y-4">
+                            <!-- 水位查询流量 -->
+                            <div class="flex items-center space-x-2">
+                                <div class="flex-1">
+                                    <input type="number" id="queryWaterLevel" class="input-field py-1 text-sm" step="0.01" placeholder="输入水位...">
+                                </div>
+                                <button id="queryFlowByLevel" class="button button-primary py-1 px-3 text-sm">
+                                    查询流量
                                 </button>
-                                <button id="clearAllButton" class="button button-secondary bg-red-600 hover:bg-red-700">
-                                    <span class="flex items-center">
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                        清空全部
-                                    </span>
+                            </div>
+                            <!-- 流量查询水位 -->
+                            <div class="flex items-center space-x-2">
+                                <div class="flex-1">
+                                    <input type="number" id="queryFlow" class="input-field py-1 text-sm" step="0.01" placeholder="输入流量...">
+                                </div>
+                                <button id="queryLevelByFlow" class="button button-primary py-1 px-3 text-sm">
+                                    查询水位
                                 </button>
                             </div>
                         </div>
                     </div>
-                    <div class="table-container flex-1 overflow-auto" style="max-height: calc(100vh - 400px);">
+
+                    <!-- 结果表格 -->
+                    <div class="mt-6 overflow-auto" style="max-height: calc(100vh - 520px);">
+                    <!-- <div class="mt-6 overflow-auto h-full flex flex-col"> -->
                         <table id="resultsTable" class="w-full">
                             <thead class="sticky top-0 bg-gray-50 shadow-sm">
                                 <tr>
@@ -329,7 +381,7 @@
                             </thead>
                             <tbody></tbody>
                         </table>
-                        <div id="noResultsMessage" class="hidden">无计算结果</div>
+                        <div id="noResultsMessage" class="hidden text-center text-gray-500 py-8 bg-blue-50 border-t border-blue-200">无计算结果</div>
                     </div>
                 </div>
             </div>
@@ -433,6 +485,8 @@
         let leftBankPointIndex = -1;
         let rightBankPointIndex = -1;
         let hBankfull = -1; // This will store min(YL, YR) when floodplain is active
+        let resultsData = []; // 将resultsData提升为全局变量
+        let intersectionPoints = []; // 存储当前水位的交点信息
 
         const canvas = document.getElementById('crossSectionCanvas');
         const ctx = canvas.getContext('2d');
@@ -446,7 +500,7 @@
         const floodplainControlsEl = document.getElementById('floodplainControls');
         const leftBankInfoEl = document.getElementById('leftBankInfo');
         const rightBankInfoEl = document.getElementById('rightBankInfo');
-        const hBankfullInfoEl = document.getElementById('hBankfullInfo');
+        // const hBankfullInfoEl = document.getElementById('hBankfullInfo');
         const resultsTableBody = document.getElementById('resultsTable').getElementsByTagName('tbody')[0];
         const statusMessageEl = document.getElementById('statusMessage');
         const noResultsMessageEl = document.getElementById('noResultsMessage');
@@ -477,22 +531,176 @@
             }
         };
 
+        // 内插查询相关函数
+        function linearInterpolate(x, x1, y1, x2, y2) {
+            if (x2 === x1) return y1; // 避免除以零
+            return y1 + (x - x1) * (y2 - y1) / (x2 - x1);
+        }
+
+        function findInterpolationPoints(value, data, valueKey, targetKey) {
+            // 确保数据按valueKey排序
+            data.sort((a, b) => a[valueKey] - b[valueKey]);
+            
+            // 如果值小于最小值或大于最大值，返回null
+            if (value < data[0][valueKey] || value > data[data.length - 1][valueKey]) {
+                return null;
+            }
+            
+            // 找到插值点
+            for (let i = 0; i < data.length - 1; i++) {
+                if (value === data[i][valueKey]) {
+                    // 精确匹配
+                    return {
+                        exact: true,
+                        value: data[i][targetKey]
+                    };
+                }
+                if (value > data[i][valueKey] && value < data[i + 1][valueKey]) {
+                    // 需要插值
+                    return {
+                        exact: false,
+                        lower: data[i],
+                        upper: data[i + 1]
+                    };
+                }
+            }
+            
+            // 如果是最后一个值
+            if (value === data[data.length - 1][valueKey]) {
+                return {
+                    exact: true,
+                    value: data[data.length - 1][targetKey]
+                };
+            }
+            
+            return null;
+        }
+
+        function formatNumber(num) {
+            return Number(num.toFixed(3));
+        }
+
+        function showQueryResult(text) {
+            const resultText = document.getElementById('queryResultText');
+            resultText.innerHTML = text;
+            resultText.classList.remove('hidden');
+        }
+
+        function handleWaterLevelQuery() {
+            const waterLevel = parseFloat(document.getElementById('queryWaterLevel').value);
+            if (isNaN(waterLevel)) {
+                showQueryResult('请输入有效的水位值');
+                return;
+            }
+
+            // 获取所有计算结果数据
+            const rows = Array.from(resultsTableBody.rows);
+            const data = rows.map(row => ({
+                h: parseFloat(row.cells[0].textContent),
+                q: parseFloat(row.cells[4].textContent)
+            }));
+
+            const result = findInterpolationPoints(waterLevel, data, 'h', 'q');
+            
+            if (!result) {
+                showQueryResult(`水位 ${waterLevel} m 超出计算范围`);
+                return;
+            }
+
+            if (result.exact) {
+                showQueryResult(`水位 ${waterLevel} m 对应的流量为 <span class="text-red-600 font-medium">${formatNumber(result.value)}</span> m³/s`);
+            } else {
+                const flow = linearInterpolate(
+                    waterLevel,
+                    result.lower.h,
+                    result.lower.q,
+                    result.upper.h,
+                    result.upper.q
+                );
+                showQueryResult(`水位 ${waterLevel} m 对应的流量为 <span class="text-red-600 font-medium">${formatNumber(flow)}</span> m³/s（内插值）`);
+            }
+        }
+
+        function handleFlowQuery() {
+            const flow = parseFloat(document.getElementById('queryFlow').value);
+            if (isNaN(flow)) {
+                showQueryResult('请输入有效的流量值');
+                return;
+            }
+
+            // 获取所有计算结果数据
+            const rows = Array.from(resultsTableBody.rows);
+            const data = rows.map(row => ({
+                h: parseFloat(row.cells[0].textContent),
+                q: parseFloat(row.cells[4].textContent)
+            }));
+
+            const result = findInterpolationPoints(flow, data, 'q', 'h');
+            
+            if (!result) {
+                showQueryResult(`流量 ${flow} m³/s 超出计算范围`);
+                return;
+            }
+
+            if (result.exact) {
+                showQueryResult(`流量 ${flow} m³/s 对应的水位为 <span class="text-red-600 font-medium">${formatNumber(result.value)}</span> m`);
+            } else {
+                const waterLevel = linearInterpolate(
+                    flow,
+                    result.lower.q,
+                    result.lower.h,
+                    result.upper.q,
+                    result.upper.h
+                );
+                showQueryResult(`流量 ${flow} m³/s 对应的水位为 <span class="text-red-600 font-medium">${formatNumber(waterLevel)}</span> m（内插值）`);
+            }
+        }
+
+        // 绑定查询按钮事件
+        document.getElementById('queryFlowByLevel').addEventListener('click', handleWaterLevelQuery);
+        document.getElementById('queryLevelByFlow').addEventListener('click', handleFlowQuery);
+
+        // 为查询输入框添加回车键事件
+        document.getElementById('queryWaterLevel').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleWaterLevelQuery();
+        });
+        document.getElementById('queryFlow').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleFlowQuery();
+        });
+
         // Event Listeners
         document.getElementById('updatePreviewButton').addEventListener('click', handleUpdatePreview);
         document.getElementById('calculateButton').addEventListener('click', handleCalculate);
-        document.getElementById('clearAllButton').addEventListener('click', clearAll);
         document.getElementById('copyResultsButton').addEventListener('click', copyResultsToClipboard);
         
         considerFloodplainEl.addEventListener('change', () => {
+            // 显示/隐藏控件
             floodplainControlsEl.classList.toggle('hidden', !considerFloodplainEl.checked);
-            if (considerFloodplainEl.checked && parsedSectionPoints.length > 0) {
-                suggestInitialBankPoints(); 
+            
+            if (considerFloodplainEl.checked) {
+                // 启用漫滩计算时的状态管理
+                if (parsedSectionPoints.length > 0) {
+                    // 只有在第一次启用或岸顶点未设置时才建议初始点
+                    if (leftBankPointIndex === -1 || rightBankPointIndex === -1) {
+                        suggestInitialBankPoints();
+                    }
+                }
             } else {
+                // 禁用漫滩计算时的状态重置
                 leftBankPointIndex = -1;
                 rightBankPointIndex = -1;
-                hBankfull = -1; 
-                updateBankPointInfo(); 
+                hBankfull = -1;
             }
+            
+            // 清除已有的计算结果
+            resultsData = [];
+            resultsTableBody.innerHTML = '';
+            noResultsMessageEl.classList.remove('hidden');
+            document.getElementById('parameterDisplay').classList.add('hidden');
+            setStatusMessage('已切换漫滩计算模式，请重新计算。', false);
+            
+            // 更新界面显示
+            updateBankPointInfo();
             drawCrossSection();
         });
 
@@ -623,46 +831,62 @@
         }
         
         function adjustBankPoint(side, direction) {
+            // 基本验证
             if (!considerFloodplainEl.checked || parsedSectionPoints.length === 0) return;
 
+            let stateChanged = false;
+
+            // 状态更新逻辑 - 仅更新索引
             if (side === 'left') {
                 const newIndex = leftBankPointIndex + direction;
-                if (newIndex >= 0 && newIndex < (rightBankPointIndex === -1 ? parsedSectionPoints.length -1 : rightBankPointIndex) ) {
+                const maxAllowed = rightBankPointIndex === -1 ? parsedSectionPoints.length - 1 : rightBankPointIndex;
+                if (newIndex >= 0 && newIndex < maxAllowed) {
                     leftBankPointIndex = newIndex;
+                    stateChanged = true;
                 }
             } else if (side === 'right') {
                 const newIndex = rightBankPointIndex + direction;
-                if (newIndex < parsedSectionPoints.length && newIndex > (leftBankPointIndex === -1 ? 0 : leftBankPointIndex) ) {
+                const minAllowed = leftBankPointIndex === -1 ? 0 : leftBankPointIndex;
+                if (newIndex < parsedSectionPoints.length && newIndex > minAllowed) {
                     rightBankPointIndex = newIndex;
+                    stateChanged = true;
                 }
             }
-            updateBankPointInfo();
-            drawCrossSection();
+
+            // 只有在状态确实发生改变时才更新界面
+            if (stateChanged) {
+                // 仅更新坐标显示
+                updateBankPointInfo();
+                // 重绘断面图（不含临界岸顶高程线）
+                drawCrossSection();
+            }
         }
 
         function updateBankPointInfo() {
+            // 获取左右岸顶点信息
             const ptL = (leftBankPointIndex !== -1 && parsedSectionPoints[leftBankPointIndex]) ? parsedSectionPoints[leftBankPointIndex] : null;
             const ptR = (rightBankPointIndex !== -1 && parsedSectionPoints[rightBankPointIndex]) ? parsedSectionPoints[rightBankPointIndex] : null;
 
+            // 更新左岸顶坐标显示
             if (ptL) {
                 leftBankInfoEl.textContent = `X:${ptL.x.toFixed(2)}, Y:${ptL.y.toFixed(2)} (点 ${leftBankPointIndex})`;
             } else {
                 leftBankInfoEl.textContent = '-';
             }
 
+            // 更新右岸顶坐标显示
             if (ptR) {
                 rightBankInfoEl.textContent = `X:${ptR.x.toFixed(2)}, Y:${ptR.y.toFixed(2)} (点 ${rightBankPointIndex})`;
             } else {
                 rightBankInfoEl.textContent = '-';
             }
 
-            if (considerFloodplainEl.checked && ptL && ptR) {
-                hBankfull = Math.min(ptL.y, ptR.y);
-                hBankfullInfoEl.textContent = `临界岸顶高程 (Hbankfull): ${hBankfull.toFixed(2)} m`;
-            } else {
-                hBankfull = -1; 
-                hBankfullInfoEl.textContent = '临界岸顶高程 (Hbankfull): -';
-            }
+            // // 更新临界岸顶高程显示（不计算，仅显示当前值）
+            // if (considerFloodplainEl.checked && hBankfull !== -1) {
+            //     hBankfullInfoEl.textContent = `临界岸顶高程: ${hBankfull.toFixed(2)} m`;
+            // } else {
+            //     hBankfullInfoEl.textContent = '临界岸顶高程: -';
+            // }
         }
 
         function calculateNiceNumber(range, round) {
@@ -699,68 +923,97 @@
         }
 
         function drawCrossSection(currentWaterLevel = null, selectedData = null) {
+            console.log("绘图函数 drawCrossSection 已被调用！");
+            // 1. 基本验证和画布准备
+            if (parsedSectionPoints.length < 2) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                return;
+            }
+
             // 设置canvas的DPI以提高清晰度
             const dpr = window.devicePixelRatio || 1;
             const rect = canvas.getBoundingClientRect();
             canvas.width = rect.width * dpr;
             canvas.height = rect.height * dpr;
             ctx.scale(dpr, dpr);
-            
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            if (parsedSectionPoints.length < 2) return;
 
-            const padding = 60; // 增加padding以便更好地显示坐标轴标签
+            // 2. 计算绘图区域尺寸
+            const padding = 60;
             const viewWidth = canvas.width / dpr - 2 * padding;
             const viewHeight = canvas.height / dpr - 2 * padding;
 
-            let minX_data = parsedSectionPoints[0].x;
-            let maxX_data = parsedSectionPoints[parsedSectionPoints.length - 1].x;
+            // 3. 计算数据范围
+            // X轴范围（断面距离）
+            const minX_data = parsedSectionPoints[0].x;
+            const maxX_data = parsedSectionPoints[parsedSectionPoints.length - 1].x;
+
+            // Y轴范围（高程）
             let minY_data = Infinity, maxY_data = -Infinity;
             parsedSectionPoints.forEach(p => {
                 minY_data = Math.min(minY_data, p.y);
                 maxY_data = Math.max(maxY_data, p.y);
             });
-            
+
+            // 4. 确定绘图范围
             let plotMinY = minY_data;
             let plotMaxY = maxY_data;
 
-            if (currentWaterLevel !== null) {
+            // 考虑水位线的影响
+            if (currentWaterLevel !== null && !isNaN(currentWaterLevel)) {
                 plotMaxY = Math.max(plotMaxY, currentWaterLevel);
                 plotMinY = Math.min(plotMinY, currentWaterLevel);
             }
-            if (hBankfull !== -1 && considerFloodplainEl.checked) {
-                plotMaxY = Math.max(plotMaxY, hBankfull);
-                if (leftBankPointIndex !== -1 && parsedSectionPoints[leftBankPointIndex]) {
-                    plotMaxY = Math.max(plotMaxY, parsedSectionPoints[leftBankPointIndex].y);
+
+            // 考虑漫滩计算的影响
+            if (considerFloodplainEl.checked) {
+                console.log(`准备绘制红点，左岸索引: ${leftBankPointIndex}, 右岸索引: ${rightBankPointIndex}`);
+                // 检查岸顶点是否有效
+                const leftBankPoint = leftBankPointIndex !== -1 ? parsedSectionPoints[leftBankPointIndex] : null;
+                const rightBankPoint = rightBankPointIndex !== -1 ? parsedSectionPoints[rightBankPointIndex] : null;
+
+                if (leftBankPoint) {
+                    plotMaxY = Math.max(plotMaxY, leftBankPoint.y);
                 }
-                if (rightBankPointIndex !== -1 && parsedSectionPoints[rightBankPointIndex]) {
-                    plotMaxY = Math.max(plotMaxY, parsedSectionPoints[rightBankPointIndex].y);
+                if (rightBankPoint) {
+                    plotMaxY = Math.max(plotMaxY, rightBankPoint.y);
+                }
+                if (hBankfull !== -1) {
+                    plotMaxY = Math.max(plotMaxY, hBankfull);
                 }
             }
 
-            const yRange = plotMaxY - plotMinY;
-            const yBuffer = Math.max(yRange * 0.1, 0.1);
-            plotMinY -= yBuffer;
-            plotMaxY += yBuffer;
-            if (plotMaxY === plotMinY) {
+            // 5. 添加缓冲区并处理边界情况
+            const plotRange = plotMaxY - plotMinY;
+            const yBuffer = Math.max(plotRange * 0.1, 0.1); // 确保至少有0.1的缓冲
+            plotMinY = Math.min(plotMinY - yBuffer, minY_data - yBuffer);
+            plotMaxY = Math.max(plotMaxY + yBuffer, maxY_data + yBuffer);
+
+            // 处理Y轴范围相等的特殊情况
+            if (Math.abs(plotMaxY - plotMinY) < 0.0001) {
                 plotMinY -= 1;
                 plotMaxY += 1;
             }
 
-            // 计算坐标轴的合理范围和间隔
+            // 6. 计算坐标轴的合理范围和间隔
             const xAxisParams = calculateAxisParameters(minX_data, maxX_data);
             const yAxisParams = calculateAxisParameters(plotMinY, plotMaxY);
 
-            // 更新绘图范围
-            minX_data = xAxisParams.min;
-            maxX_data = xAxisParams.max;
+            // 使用计算出的合理范围
+            const plotMinX = xAxisParams.min;
+            const plotMaxX = xAxisParams.max;
             plotMinY = yAxisParams.min;
             plotMaxY = yAxisParams.max;
 
-            const scaleX = viewWidth / (maxX_data - minX_data);
-            const scaleY = viewHeight / (plotMaxY - plotMinY);
+            // 7. 计算坐标转换函数
+            // 确保分母不为零
+            const xRange = Math.max(plotMaxX - plotMinX, 0.0001);
+            const yRange = Math.max(plotMaxY - plotMinY, 0.0001);
+            
+            const scaleX = viewWidth / xRange;
+            const scaleY = viewHeight / yRange;
 
-            const toCanvasX = (worldX) => padding + (worldX - minX_data) * scaleX;
+            const toCanvasX = (worldX) => padding + (worldX - plotMinX) * scaleX;
             const toCanvasY = (worldY) => canvas.height / dpr - padding - (worldY - plotMinY) * scaleY;
 
             // 绘制坐标轴
@@ -796,7 +1049,7 @@
             ctx.strokeStyle = '#9ca3af';
             ctx.lineWidth = 1.5;
             ctx.stroke();
-
+            
             // 绘制标签
             ctx.fillStyle = '#4b5563';
             ctx.font = '12px Inter';
@@ -822,7 +1075,7 @@
                 ctx.textAlign = "right";
                 ctx.fillText(val.toFixed(2), padding - 8, yPos + 4);
                 
-                ctx.beginPath();
+                 ctx.beginPath();
                 ctx.moveTo(padding - 5, yPos);
                 ctx.lineTo(padding, yPos);
                 ctx.strokeStyle = '#9ca3af';
@@ -916,7 +1169,7 @@
                     ctx.stroke();
                 }
                 
-                if (hBankfull !== -1 && hBankfull >= plotMinY && hBankfull <= plotMaxY) {
+                if (hBankfull !== -1 && hBankfull >= plotMinY && hBankfull <= plotMaxY) { 
                     ctx.beginPath();
                     ctx.moveTo(padding, toCanvasY(hBankfull));
                     ctx.lineTo(canvas.width / dpr - padding, toCanvasY(hBankfull));
@@ -940,7 +1193,7 @@
                 }
             }
 
-            // 绘制水位线
+            // 绘制水位线和填充区域
             if (currentWaterLevel !== null && currentWaterLevel >= plotMinY && currentWaterLevel <= plotMaxY) {
                 ctx.beginPath();
                 ctx.moveTo(padding, toCanvasY(currentWaterLevel));
@@ -963,54 +1216,42 @@
                 ctx.textAlign = "left";
                 ctx.fillText(label, labelX, labelY + 4);
 
-                // 填充水位以下区域
-                ctx.beginPath();
-                let startPoint = null;
-                let inWater = false;
-
-                // 找到第一个交点
-                for (let i = 0; i < parsedSectionPoints.length; i++) {
-                    const p = parsedSectionPoints[i];
-                    if (i === 0) {
-                        if (p.y <= currentWaterLevel) {
-                            startPoint = p;
-                            inWater = true;
-                            ctx.moveTo(toCanvasX(p.x), toCanvasY(p.y));
-                        }
-                    } else {
-                        const prev = parsedSectionPoints[i - 1];
-                        if (!inWater && prev.y > currentWaterLevel && p.y <= currentWaterLevel) {
-                            // 计算交点
-                            const x = prev.x + (p.x - prev.x) * (currentWaterLevel - prev.y) / (p.y - prev.y);
-                            startPoint = { x, y: currentWaterLevel };
-                            inWater = true;
-                            ctx.moveTo(toCanvasX(x), toCanvasY(currentWaterLevel));
-                        }
-                    }
-
-                    if (inWater) {
-                        if (p.y <= currentWaterLevel) {
-                            ctx.lineTo(toCanvasX(p.x), toCanvasY(p.y));
-                        } else {
-                            // 计算交点
-                            const prev = parsedSectionPoints[i - 1];
-                            const x = prev.x + (p.x - prev.x) * (currentWaterLevel - prev.y) / (p.y - prev.y);
-                            ctx.lineTo(toCanvasX(x), toCanvasY(currentWaterLevel));
-                            inWater = false;
+                // 使用预先计算的交点信息填充水域
+                if (selectedData && selectedData.intersectionPoints && selectedData.intersectionPoints.length >= 2) {
+                    const intersectionPoints = selectedData.intersectionPoints;
+                    
+                    // 开始绘制填充区域
+                    ctx.beginPath();
+                    
+                    // 从第一个交点开始
+                    ctx.moveTo(toCanvasX(intersectionPoints[0].x), toCanvasY(intersectionPoints[0].y));
+                    
+                    // 找到位于第一个和最后一个交点之间的所有断面点
+                    const firstX = intersectionPoints[0].x;
+                    const lastX = intersectionPoints[intersectionPoints.length - 1].x;
+                    
+                    // 绘制第一个交点到最后一个交点之间的河床轮廓
+                    let foundStart = false;
+                    for (let i = 0; i < parsedSectionPoints.length; i++) {
+                        const point = parsedSectionPoints[i];
+                        if (point.x >= firstX && point.x <= lastX) {
+                            if (!foundStart) {
+                                foundStart = true;
+                            }
+                            ctx.lineTo(toCanvasX(point.x), toCanvasY(point.y));
+                        } else if (foundStart) {
+                            break;
                         }
                     }
-                }
-
-                // 如果最后一个点在水位以下，连接到水位线
-                const lastPoint = parsedSectionPoints[parsedSectionPoints.length - 1];
-                if (lastPoint.y <= currentWaterLevel) {
-                    ctx.lineTo(toCanvasX(lastPoint.x), toCanvasY(currentWaterLevel));
-                }
-
-                // 如果找到了起始点，闭合路径
-                if (startPoint) {
-                    ctx.lineTo(toCanvasX(startPoint.x), toCanvasY(currentWaterLevel));
+                    
+                    // 连接到最后一个交点
+                    ctx.lineTo(toCanvasX(lastX), toCanvasY(currentWaterLevel));
+                    
+                    // 闭合路径
+                    ctx.lineTo(toCanvasX(firstX), toCanvasY(currentWaterLevel));
                     ctx.closePath();
+                    
+                    // 填充
                     ctx.fillStyle = 'rgba(6, 182, 212, 0.2)';
                     ctx.fill();
                 }
@@ -1031,9 +1272,14 @@
         function calculateGeometricProperties(segmentPoints, waterLevel) {
             let area = 0;
             let bedPerimeter = 0;
+            let intersectionPoints = [];
+            
             if (!segmentPoints || segmentPoints.length < 2) {
-                return { area: 0, bedPerimeter: 0 };
+                return { area: 0, bedPerimeter: 0, intersectionPoints: [] };
             }
+
+            let firstIntersectionFound = false;
+            let lastIntersectionFound = false;
 
             for (let i = 0; i < segmentPoints.length - 1; i++) {
                 const p1 = segmentPoints[i];
@@ -1065,6 +1311,15 @@
                     }
                     
                     const ix = x1 + dx * (waterLevel - y1) / (y2 - y1);
+                    const intersectionPoint = { x: ix, y: waterLevel };
+
+                    if (!firstIntersectionFound) {
+                        intersectionPoints.push(intersectionPoint);
+                        firstIntersectionFound = true;
+                    } else if (!lastIntersectionFound) {
+                        intersectionPoints.push(intersectionPoint);
+                        lastIntersectionFound = true;
+                    }
 
                     if (y1 < waterLevel) { 
                         area += (ix - x1) * h1 / 2.0; 
@@ -1075,25 +1330,57 @@
                     }
                 }
             }
-            return { area: Math.max(0, area), bedPerimeter: Math.max(0, bedPerimeter) };
+
+            // 如果只找到一个交点，说明水位线与断面只有一个交点（比如在端点）
+            // 此时将该点作为两个交点
+            if (intersectionPoints.length === 1) {
+                intersectionPoints.push({ ...intersectionPoints[0] });
+            }
+
+            return {
+                area: Math.max(0, area),
+                bedPerimeter: Math.max(0, bedPerimeter),
+                intersectionPoints: intersectionPoints
+            };
         }
 
         function handleUpdatePreview() {
-            if (parseSectionData()) {
-                if (considerFloodplainEl.checked && (leftBankPointIndex === -1 || rightBankPointIndex === -1 || 
-                    !parsedSectionPoints[leftBankPointIndex] || !parsedSectionPoints[rightBankPointIndex])) {
-                     suggestInitialBankPoints(); 
-                }
-                 updateBankPointInfo(); 
-                drawCrossSection();
-            } else {
-                 ctx.clearRect(0, 0, canvas.width, canvas.height); 
+            // 清除画布，准备重新绘制
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 解析断面数据
+            if (!parseSectionData()) {
+                setStatusMessage('断面数据解析失败，请检查输入格式。', true);
+                return;
             }
+
+            // 验证数据有效性
+            if (parsedSectionPoints.length === 0) {
+                setStatusMessage('没有有效的断面数据。', true);
+                return;
+            }
+
+            // 重新绘制断面图
+            drawCrossSection();
+            setStatusMessage('断面图已更新。', false);
         }
 
         function handleCalculate() {
             if (!parseSectionData()) return;
 
+            // 1. 计算临界岸顶高程（如果启用了漫滩计算）
+            if (considerFloodplainEl.checked && leftBankPointIndex !== -1 && rightBankPointIndex !== -1) {
+                const leftBankPoint = parsedSectionPoints[leftBankPointIndex];
+                const rightBankPoint = parsedSectionPoints[rightBankPointIndex];
+                if (leftBankPoint && rightBankPoint) {
+                    hBankfull = Math.min(leftBankPoint.y, rightBankPoint.y);
+                    updateBankPointInfo(); // 更新显示
+                }
+            } else {
+                hBankfull = -1;
+            }
+
+            // 2. 获取计算参数
             const waterLevelStep = parseFloat(waterLevelIntervalEl.value);
             const n_val = parseFloat(manningNEl.value);
             const i_val = parseFloat(channelSlopeEl.value);
@@ -1109,21 +1396,24 @@
                 setStatusMessage('无效的河道坡降 (必须 > 0)。', true); return;
             }
             
+            // 重置结果
+            resultsData = [];
+            resultsTableBody.innerHTML = '';
+            let lastPlottedWL = null;
+
+            // 计算水位范围
             let minY_data = Infinity;
             let maxY_data_overall = -Infinity;
-            if (parsedSectionPoints.length > 0) {
                 parsedSectionPoints.forEach(p => {
                     minY_data = Math.min(minY_data, p.y);
                     maxY_data_overall = Math.max(maxY_data_overall, p.y);
                 });
-            } else { // No section data
+
+            if (parsedSectionPoints.length === 0) {
                 setStatusMessage('断面数据为空，无法计算。', true);
-                resultsTableBody.innerHTML = '';
                 noResultsMessageEl.classList.remove('hidden');
-                drawCrossSection(); // Clear canvas or show empty state
                 return;
             }
-
 
             let startWL, endWL; 
 
@@ -1132,20 +1422,17 @@
                 const manualEnd = parseFloat(manualEndWLEl.value);
 
                 if (isNaN(manualStart) || isNaN(manualEnd)) {
-                    setStatusMessage('手动输入的起始或终止水位无效。请检查输入。', true); return;
+                    setStatusMessage('手动输入的起始或终止水位无效。请检查输入。', true);
+                    return;
                 }
                 if (manualStart >= manualEnd) {
-                    setStatusMessage('手动起始水位必须小于终止水位。', true); return;
+                    setStatusMessage('手动起始水位必须小于终止水位。', true);
+                    return;
                 }
-                // Optional: Warn if manualStart is below minY_data, but allow it.
-                // if (manualStart < minY_data) {
-                //    setStatusMessage(`警告: 手动起始水位 ${manualStart.toFixed(2)}m 低于河道最低点 ${minY_data.toFixed(2)}m。部分初始水位可能无水流。`, false); // false for warning
-                // }
                 startWL = manualStart;
                 endWL = manualEnd;
-                setStatusMessage('使用手动设定的水位范围进行计算。', false); // Set temporary success message
+                setStatusMessage('使用手动设定的水位范围进行计算。', false);
             } else {
-                // --- Automatic startWL and endWL determination logic ---
                 startWL = Math.ceil(minY_data / waterLevelStep) * waterLevelStep;
                 if (startWL <= minY_data) startWL += waterLevelStep; 
 
@@ -1159,31 +1446,24 @@
                     endWL = Math.max(endWL, YL_for_endWL + 5 * waterLevelStep, YR_for_endWL + 5 * waterLevelStep);
                     endWL = Math.min(endWL, maxY_data_overall + 5 * waterLevelStep); 
                 }
-                // Ensure endWL is sensible even for very flat or single point minY_data scenarios
-                if (endWL < startWL && startWL > minY_data) { 
-                    endWL = startWL + waterLevelStep * 5; 
-                } else if (endWL < startWL) { // if startWL is already high due to minY_data being high
+
+                if (endWL <= startWL) {
                     endWL = startWL + waterLevelStep * 5;
                 }
             }
 
-
             if (startWL >= endWL + waterLevelStep/2) { 
                 setStatusMessage('无法确定有效的计算水位范围 (起始水位 >= 终止水位)。请检查断面数据、岸顶定义、水位间隔或手动输入。', true);
-                resultsTableBody.innerHTML = '';
                 noResultsMessageEl.classList.remove('hidden');
                 return;
             }
 
-            resultsTableBody.innerHTML = ''; 
-            let resultsData = [];
-            let lastPlottedWL = null;
-
+            // 开始计算
             for (let currentWL_iter = startWL; currentWL_iter <= endWL; currentWL_iter += waterLevelStep) {
                 const currentWL = parseFloat(currentWL_iter.toFixed(5)); 
-
                 let A_final = 0, P_final = 0, R_final = 0, Q_final = 0;
                 let remark = "-";
+                let intersectionPoints = [];
 
                 const floodplainActiveAndDefined = considerFloodplainEl.checked && 
                                                  leftBankPointIndex !== -1 && 
@@ -1195,17 +1475,17 @@
                     const geom = calculateGeometricProperties(parsedSectionPoints, currentWL);
                     A_final = geom.area;
                     P_final = geom.bedPerimeter; 
+                    intersectionPoints = geom.intersectionPoints;
                     
                     if (A_final > 0 && P_final > 0) {
                         R_final = A_final / P_final;
                         if (n_val > 0 && i_val > 0) {
                            Q_final = (1 / n_val) * A_final * Math.pow(R_final, 2/3) * Math.pow(i_val, 1/2);
-                        } else { Q_final = 0; }
-                    } else { R_final = 0; Q_final = 0; }
+                        }
+                    }
                 } else {
                     const YL_val = parsedSectionPoints[leftBankPointIndex].y;
                     const YR_val = parsedSectionPoints[rightBankPointIndex].y;
-                    // hBankfull is already globally updated
 
                     if (currentWL > hBankfull) { 
                         remark = "漫滩";
@@ -1220,6 +1500,8 @@
                     const geom_mc = calculateGeometricProperties(points_mc, currentWL);
                     let A_mc = geom_mc.area;
                     let P_mc_bed = geom_mc.bedPerimeter;
+                    let intersectionPoints_mc = geom_mc.intersectionPoints;
+
                     let P_mc = P_mc_bed + Math.max(0, currentWL - YL_val) + Math.max(0, currentWL - YR_val);
                     let R_mc = (A_mc > 0 && P_mc > 0) ? A_mc / P_mc : 0;
                     let Q_mc = (A_mc > 0 && R_mc > 0 && n_val > 0 && i_val > 0) ? 
@@ -1227,9 +1509,11 @@
                     if (A_mc <= 0) Q_mc = 0;
 
                     let A_lfp = 0, Q_lfp = 0;
+                    let intersectionPoints_lfp = [];
                     if (currentWL > YL_val) { 
                         const geom_lfp = calculateGeometricProperties(points_lfp, currentWL);
                         A_lfp = geom_lfp.area;
+                        intersectionPoints_lfp = geom_lfp.intersectionPoints;
                         if (A_lfp > 0) {
                             let P_lfp_bed_component = geom_lfp.bedPerimeter;
                             let P_lfp_component = P_lfp_bed_component + Math.max(0, currentWL - YL_val);
@@ -1241,9 +1525,11 @@
                     if (A_lfp <= 0) Q_lfp = 0; 
 
                     let A_rfp = 0, Q_rfp = 0;
+                    let intersectionPoints_rfp = [];
                     if (currentWL > YR_val) { 
                         const geom_rfp = calculateGeometricProperties(points_rfp, currentWL);
                         A_rfp = geom_rfp.area;
+                        intersectionPoints_rfp = geom_rfp.intersectionPoints;
                         if (A_rfp > 0) {
                             let P_rfp_bed_component = geom_rfp.bedPerimeter;
                             let P_rfp_component = P_rfp_bed_component + Math.max(0, currentWL - YR_val);
@@ -1256,10 +1542,19 @@
 
                     Q_final = Q_mc + Q_lfp + Q_rfp;
                     A_final = A_mc + A_lfp + A_rfp;
+
+                    // 合并所有交点
+                    intersectionPoints = [...intersectionPoints_lfp, ...intersectionPoints_mc, ...intersectionPoints_rfp];
+                    // 按x坐标排序并去重
+                    intersectionPoints = intersectionPoints
+                        .sort((a, b) => a.x - b.x)
+                        .filter((point, index, self) =>
+                            index === 0 || Math.abs(point.x - self[index - 1].x) > 0.001
+                        );
                     
                     if (A_final > 0 && Q_final > 0 && n_val > 0 && i_val > 0) {
                         R_final = Math.pow((Q_final * n_val) / (A_final * Math.pow(i_val, 0.5)), 1.5);
-                        P_final = (R_final > 0 && isFinite(R_final)) ? A_final / R_final : Infinity; // Check R_final is finite
+                        P_final = (R_final > 0 && isFinite(R_final)) ? A_final / R_final : Infinity;
                     } else if (A_final > 0) {
                         R_final = 0;
                         P_final = Infinity; 
@@ -1269,27 +1564,28 @@
                     }
                 }
                 
-                if (A_final > 0 || (A_final === 0 && currentWL >= minY_data) ) {
-                     if (A_final === 0 && Q_final === 0 && P_final === 0 && R_final === 0 && currentWL < minY_data + waterLevelStep * 0.01 ) {
-                        // Skip if truly no water and WL is very close to or below lowest point
-                     } else {
+                // 保存结果
+                if (A_final > 0 || (A_final === 0 && currentWL >= minY_data)) {
+                    if (!(A_final === 0 && Q_final === 0 && P_final === 0 && R_final === 0 && currentWL < minY_data + waterLevelStep * 0.01)) {
                         resultsData.push({
-                            wl: currentWL.toFixed(3),
+                            wl: currentWL.toFixed(2),
                             a: A_final.toFixed(2),
                             p: P_final === Infinity ? "Inf." : (isFinite(P_final) ? P_final.toFixed(2) : "Inf."),
                             r: R_final.toFixed(2),
                             q: Q_final.toFixed(2),
-                            rem: remark
+                            rem: remark,
+                            intersectionPoints: intersectionPoints
                         });
                         if (A_final > 0) lastPlottedWL = currentWL;
                      }
                 }
             }
 
+            // 显示结果
             if (resultsData.length > 0) {
                 resultsData.forEach(data => {
                     const row = resultsTableBody.insertRow();
-                    row.addEventListener('click', handleTableRowClick); // 添加点击事件监听器
+                    row.addEventListener('click', handleTableRowClick);
                     
                     row.insertCell().textContent = data.wl;
                     row.insertCell().textContent = data.a;
@@ -1304,22 +1600,15 @@
                         remarkCell.classList.add('remark-main');
                     }
                 });
-                
+
+                noResultsMessageEl.classList.add('hidden');
+                     setStatusMessage(`计算完成，共 ${resultsData.length} 条结果。`, false);
+
                 // 默认选中第一行
                 const firstRow = resultsTableBody.firstElementChild;
                 if (firstRow) {
                     firstRow.click();
                 }
-                
-                noResultsMessageEl.classList.add('hidden');
-                if (!useManualLevels || statusMessageEl.classList.contains('error') || resultsData.length > 0) {
-                    setStatusMessage(`计算完成，共 ${resultsData.length} 条结果。`, false);
-                }
-
-                const wlToDraw = lastPlottedWL !== null ? lastPlottedWL : 
-                                (resultsData.length > 0 ? parseFloat(resultsData[resultsData.length-1].wl) : 
-                                (parsedSectionPoints.length > 0 ? minY_data : null) );
-                drawCrossSection(wlToDraw);
             } else {
                 noResultsMessageEl.classList.remove('hidden');
                 setStatusMessage('在设定的计算范围内未能得到有效的水力计算结果。请检查输入或调整水位范围。', true);
@@ -1327,7 +1616,8 @@
             }
         }
 
-        function clearAll() {
+        // 内部函数：清空所有数据和重置界面
+        function _resetAll() {
             sectionDataEl.value = '';
             waterLevelIntervalEl.value = '0.5';
             manningNEl.value = '0.03';
@@ -1346,6 +1636,8 @@
             leftBankPointIndex = -1;
             rightBankPointIndex = -1;
             hBankfull = -1;
+            resultsData = [];
+            intersectionPoints = [];
             updateBankPointInfo();
             
             resultsTableBody.innerHTML = '';
@@ -1417,13 +1709,15 @@
             row.classList.add('selected');
             
             // 获取该行的数据
+            const rowIndex = Array.from(allRows).indexOf(row);
             const selectedData = {
                 wl: cells[0].textContent,
                 a: cells[1].textContent,
                 p: cells[2].textContent,
                 r: cells[3].textContent,
                 q: cells[4].textContent,
-                rem: cells[5].textContent
+                rem: cells[5].textContent,
+                intersectionPoints: resultsData[rowIndex].intersectionPoints // 从存储的数据中获取交点信息
             };
             
             // 重绘断面图，传入选中的水位和数据
@@ -1630,5 +1924,6 @@
     </script>
 </body>
 </html>
+
 
 
