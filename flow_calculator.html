@@ -172,7 +172,7 @@
                         <h2 class="section-title">基本参数输入</h2>
                         <div class="space-y-4">
                             <div>
-                                <label for="sectionData" class="input-label">断面数据 (平距+高程，由换行符分隔):</label>
+                                <label for="sectionData" class="input-label">断面数据 (平距+高程，由换行符或英文逗号分隔):</label>
                                 <textarea id="sectionData" rows="7" class="input-field font-mono text-sm" placeholder="例如:&#10;0 100&#10;10 95&#10;20 92&#10;30 95&#10;40 100">0	88
 10	84.813
 40	84.813
@@ -756,7 +756,7 @@
             const lines = data.split('\n');
             parsedSectionPoints = [];
             for (let i = 0; i < lines.length; i++) {
-                const parts = lines[i].trim().split(/\s+/);
+                const parts = lines[i].trim().split(/[\s,]+/);//断面数据可由制表符或逗号分隔
                 if (parts.length === 2) {
                     const x = parseFloat(parts[0]);
                     const y = parseFloat(parts[1]);
