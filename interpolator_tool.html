@@ -193,15 +193,24 @@
 
             // 识别列类型
             identifyColumnTypes();
-            
-            // 如果是填充模式，自动识别行类型
             if (currentMode === 'fill') {
                 autoDetectUserRowTypes();
             }
-            
-            renderTable();
-            updateStatus(`成功加载 ${originalData.length} 行数据。请继续操作。`, 'success');
-            startBtn.disabled = false;
+
+            // 使用 async/await 确保字体加载完毕
+            (async () => {
+                try {
+                    await document.fonts.ready; // 等待所有字体加载完成
+                    console.log('字体已加载，开始渲染表格。');
+                } catch (error) {
+                    console.error('字体加载失败:', error);
+                } finally {
+                    // 无论字体是否加载成功，都继续渲染，避免页面卡住
+                    renderTable(); 
+                    updateStatus(`成功加载 ${originalData.length} 行数据。请继续操作。`, 'success');
+                    startBtn.disabled = false;
+                }
+            })();
         }
         
         // 识别列类型
