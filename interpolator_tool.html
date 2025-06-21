@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据内插计算工具</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 自定义一些样式 */
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+        }
+        #pasteModal { transition: opacity 0.3s ease-in-out; }
+        .data-table th, .data-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+        /* 被填充或内插的行的样式 */
+        .highlight-row { background-color: #fefce8; /* yellow-50 */ }
+        /* 预览时“数据行”的背景色 */
+        .data-row-preview { background-color: #e0f2fe; /* sky-100 */ }
+        .data-table th { background-color: #f9fafb; font-weight: 600; }
+        .row-type-select {
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            border: 1px solid #d1d5db;
+            background-color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
+
+    <!-- 1. 上方区域: 控制面板 -->
+    <header class="bg-white shadow-md p-4 sticky top-0 z-20">
+        <div class="container mx-auto">
+            <!-- 第一行：数据输入 -->
+            <div class="flex flex-wrap items-center justify-start gap-3 mb-4">
+                <h1 class="text-xl font-bold text-gray-900 hidden md:block mr-4">数据内插工具</h1>
+                <button id="pasteFromClipboardBtn" class="bg-yellow-500 text-white px-4 py-2 rounded-lg shadow hover:bg-yellow-600 transition duration-300">读取剪贴板</button>
+                <button id="openModalBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition duration-300">粘贴数据...</button>
+                <label for="fileInput" class="cursor-pointer bg-green-600 text-white px-4 py-2 rounded-lg shadow hover:bg-green-700 transition duration-300">
+                    上传文件<input type="file" id="fileInput" class="hidden" accept=".csv,.txt">
+                </label>
+            </div>
+            <!-- 第二行：模式选择与操作 -->
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <!-- 模式选择 -->
+                <div class="flex items-center gap-4">
+                    <span class="font-semibold">操作模式:</span>
+                    <label class="flex items-center"><input type="radio" name="mode" value="insert" checked class="mr-1">插入固定行数</label>
+                    <label class="flex items-center"><input type="radio" name="mode" value="fill" class="mr-1">填充已有空行</label>
+                </div>
+                <!-- 参数配置 (仅在插入模式下显示) -->
+                <div id="interpolationCountContainer" class="flex items-center gap-2">
+                    <label for="interpolationCount" class="font-semibold">每行间内插行数:</label>
+                    <input type="number" id="interpolationCount" value="1" min="1" class="w-20 border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <!-- 执行与导出 -->
+                <div class="flex items-center gap-3">
+                    <button id="startBtn" disabled class="bg-indigo-600 text-white px-5 py-2 rounded-lg shadow hover:bg-indigo-700 transition duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed">开始内插</button>
+                    <button id="copyBtn" disabled class="bg-teal-600 text-white px-5 py-2 rounded-lg shadow hover:bg-teal-700 transition duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed">复制结果</button>
+                    <button id="downloadBtn" disabled class="bg-gray-600 text-white px-5 py-2 rounded-lg shadow hover:bg-gray-700 transition duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed">下载结果</button>
+                </div>
+            </div>
+            <p id="statusMessage" class="text-center text-sm text-gray-500 mt-3">请先提供数据。</p>
+        </div>
+    </header>
+
+    <!-- 2. 下方区域: 数据显示区 -->
+    <main class="container mx-auto p-4 flex-grow">
+        <div id="tableContainer" class="bg-white rounded-lg shadow-lg overflow-auto h-full min-h-[60vh]">
+            <div class="flex items-center justify-center h-full text-gray-400">
+                <p>数据显示区域 | 结果将在此处以表格形式呈现</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- 3. 模态框: 用于粘贴数据 -->
+    <div id="pasteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-30 hidden">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl transform transition-all">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h2 class="text-lg font-semibold">粘贴表格数据</h2>
+                <button id="closeModalBtn" class="text-gray-500 hover:text-gray-800">&times;</button>
+            </div>
+            <div class="p-4">
+                <textarea id="pasteTextarea" class="w-full h-64 border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500" placeholder="请在此处粘贴由逗号或制表符分隔的数据..."></textarea>
+            </div>
+            <div class="flex justify-end p-4 bg-gray-50 border-t rounded-b-xl">
+                <button id="cancelModalBtn" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg mr-2 hover:bg-gray-300">取消</button>
+                <button id="confirmPasteBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">导入数据</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM 元素引用 ---
+        const openModalBtn = document.getElementById('openModalBtn'),
+              closeModalBtn = document.getElementById('closeModalBtn'),
+              cancelModalBtn = document.getElementById('cancelModalBtn'),
+              confirmPasteBtn = document.getElementById('confirmPasteBtn'),
+              pasteModal = document.getElementById('pasteModal'),
+              pasteTextarea = document.getElementById('pasteTextarea'),
+              fileInput = document.getElementById('fileInput'),
+              interpolationCountInput = document.getElementById('interpolationCount'),
+              interpolationCountContainer = document.getElementById('interpolationCountContainer'),
+              startBtn = document.getElementById('startBtn'),
+              downloadBtn = document.getElementById('downloadBtn'),
+              copyBtn = document.getElementById('copyBtn'),
+              tableContainer = document.getElementById('tableContainer'),
+              statusMessage = document.getElementById('statusMessage'),
+              pasteFromClipboardBtn = document.getElementById('pasteFromClipboardBtn'),
+              modeRadios = document.querySelectorAll('input[name="mode"]');
+
+        // --- 全局状态变量 ---
+        let currentMode = 'insert';       // 当前操作模式: 'insert' 或 'fill'
+        let originalData = [];            // 原始数据 (二维数组)
+        let headers = [];                 // 表头
+        let columnTypes = [];             // 列数据类型 ('number' 或 'string')
+        let userRowTypes = [];            // '填充'模式下，用户定义的每行类型 ('data' 或 'fill')
+        let processedData = [];           // 内插或填充后的最终数据
+
+        // --- 模式切换逻辑 ---
+        modeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                currentMode = e.target.value;
+                interpolationCountContainer.style.display = currentMode === 'insert' ? 'flex' : 'none';
+                // 如果已有数据，则重新渲染表格以适应新模式
+                if (originalData.length > 0) {
+                    renderTable();
+                    updateStatus(`已切换到“${currentMode === 'insert' ? '插入固定行数' : '填充已有空行'}”模式。`, 'info');
+                }
+            });
+        });
+        
+        // --- 模态框与输入逻辑 (粘贴，剪贴板，文件) ---
+        const showModal = () => {
+            pasteModal.classList.remove('hidden');
+            pasteTextarea.focus(); // 自动聚焦到输入框
+        }
+        const hideModal = () => pasteModal.classList.add('hidden');
+        openModalBtn.addEventListener('click', showModal);
+        closeModalBtn.addEventListener('click', hideModal);
+        cancelModalBtn.addEventListener('click', hideModal);
+        pasteModal.addEventListener('click', (e) => { if (e.target === pasteModal) hideModal(); });
+        confirmPasteBtn.addEventListener('click', () => {
+            const text = pasteTextarea.value;
+            if (text.trim()) processRawData(text);
+            hideModal();
+        });
+        pasteFromClipboardBtn.addEventListener('click', async () => {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (text.trim()) processRawData(text); else updateStatus('剪贴板为空。', 'error');
+            } catch (err) { updateStatus('无法读取剪贴板。请确保已授予权限。', 'error'); }
+        });
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => processRawData(e.target.result);
+            reader.onerror = () => updateStatus('读取文件失败。', 'error');
+            reader.readAsText(file);
+            event.target.value = null;
+        });
+
+        // --- 数据处理与解析 ---
+        function processRawData(text) {
+            resetState(); // 重置状态
+            const lines = text.trim().split(/\r?\n/).filter(line => line.trim() !== '');
+            if (lines.length < 1) { // 至少需要1行数据（表头）+ 1行内容
+                updateStatus('数据不足，请提供包含表头和至少一行内容的数据。', 'error');
+                return;
+            }
+
+            const separator = detectSeparator(lines[0]);
+            headers = lines[0].split(separator).map(h => h.trim());
+            
+            originalData = lines.slice(1).map(line => 
+                line.split(separator).map(cell => {
+                    const trimmedCell = cell.trim();
+                    const num = Number(trimmedCell);
+                    return isNaN(num) || trimmedCell === '' ? trimmedCell : num;
+                })
+            );
+
+            if (originalData.length === 0) {
+                 updateStatus('未找到有效的数据行。', 'error');
+                 return;
+            }
+
+            // 识别列类型
+            identifyColumnTypes();
+            
+            // 如果是填充模式，自动识别行类型
+            if (currentMode === 'fill') {
+                autoDetectUserRowTypes();
+            }
+            
+            renderTable();
+            updateStatus(`成功加载 ${originalData.length} 行数据。请继续操作。`, 'success');
+            startBtn.disabled = false;
+        }
+        
+        // 识别列类型
+        function identifyColumnTypes() {
+             // 遍历所有数据行来更准确地判断列类型
+            columnTypes = headers.map((_, colIndex) => {
+                // 如果该列中至少有一个是数字，则认为是数字列
+                for (const row of originalData) {
+                    if (typeof row[colIndex] === 'number') {
+                        return 'number';
+                    }
+                }
+                return 'string';
+            });
+        }
+
+        // 自动识别用户行类型（用于填充模式）
+        function autoDetectUserRowTypes() {
+            // 步骤1：数据分析 - 计算每行的数值个数
+            const numberCounts = originalData.map(row =>
+                row.reduce((acc, cell) => acc + (typeof cell === 'number' ? 1 : 0), 0)
+            );
+
+            // 步骤2：模式发现 - 统计各种数值个数的出现频率
+            const countsFrequency = numberCounts.reduce((acc, count) => {
+                acc[count] = (acc[count] || 0) + 1;
+                return acc;
+            }, {});
+
+            // 将频率对象转换为数组并排序，找出出现频率最高的两种模式
+            const sortedFrequencies = Object.entries(countsFrequency)
+                .sort(([, a], [, b]) => b - a);
+
+            // 步骤3：模式定义 - 确定数据行和待填充行的特征
+            let dataRowCount = -1;
+            let fillRowCount = -1;
+
+            if (sortedFrequencies.length >= 2) {
+                const pattern1Count = parseInt(sortedFrequencies[0][0]);
+                const pattern2Count = parseInt(sortedFrequencies[1][0]);
+                // 数值个数多的作为数据行特征，少的作为待填充行特征
+                dataRowCount = Math.max(pattern1Count, pattern2Count);
+                fillRowCount = Math.min(pattern1Count, pattern2Count);
+            } else if (sortedFrequencies.length === 1) {
+                // 如果只有一种模式，那么所有行都被认为是数据行
+                dataRowCount = parseInt(sortedFrequencies[0][0]);
+                fillRowCount = -1; // 不存在待填充行模式
+            } else {
+                // 没有数据或无法识别模式，直接返回
+                userRowTypes = originalData.map(() => 'data'); // 默认全为数据行
+                return;
+            }
+            
+            // 步骤4：最终分类 - 根据特征为每一行分类
+            userRowTypes = numberCounts.map(count => {
+                if (count === dataRowCount) {
+                    return 'data';
+                }
+                // 只有当存在明确的待填充行模式时，才进行匹配
+                if (fillRowCount !== -1 && count === fillRowCount) {
+                    return 'fill';
+                }
+                // 对于不属于主要模式的“噪音”行，或者当只有一种模式时，默认归为待填充行
+                return 'fill';
+            });
+
+            // 边界情况处理：强制第一行和最后一行是数据行，确保计算可以进行
+            if (userRowTypes.length > 0) {
+                userRowTypes[0] = 'data';
+                userRowTypes[userRowTypes.length - 1] = 'data';
+            }
+        }
+        
+        function detectSeparator(line) {
+            return (line.match(/\t/g) || []).length > (line.match(/,/g) || []).length ? '\t' : ',';
+        }
+
+        // --- “开始内插”按钮核心逻辑 ---
+        startBtn.addEventListener('click', () => {
+            updateStatus('正在计算中...', 'info');
+            startBtn.disabled = true;
+
+            setTimeout(() => {
+                if (currentMode === 'insert') {
+                    runInsertMode();
+                } else {
+                    runFillMode();
+                }
+            }, 50);
+        });
+        
+        // "插入固定行数"模式的执行逻辑
+        function runInsertMode() {
+             if (originalData.length < 2) {
+                updateStatus('“插入模式”至少需要两行数据才能进行内插。', 'error');
+                startBtn.disabled = false;
+                return;
+            }
+            const N = parseInt(interpolationCountInput.value, 10);
+            if (isNaN(N) || N < 1) {
+                updateStatus('内插行数必须是大于0的整数。', 'error');
+                startBtn.disabled = false;
+                return;
+            }
+
+            const finalData = [];
+            const highlightedIndices = new Set();
+            finalData.push(originalData[0]);
+
+            for (let i = 0; i < originalData.length - 1; i++) {
+                const rowA = originalData[i], rowB = originalData[i+1];
+                for (let j = 1; j <= N; j++) {
+                    const interpolatedRow = columnTypes.map((type, k) => {
+                        if (type === 'number' && typeof rowA[k] === 'number' && typeof rowB[k] === 'number') {
+                            return rowA[k] + (rowB[k] - rowA[k]) * j / (N + 1);
+                        }
+                        return rowA[k]; // 文本列向下填充
+                    });
+                    finalData.push(interpolatedRow);
+                    highlightedIndices.add(finalData.length - 1);
+                }
+                finalData.push(rowB);
+            }
+            processedData = finalData;
+            renderTable(processedData, highlightedIndices, true);
+            finishProcessing();
+        }
+
+        // "填充已有空行"模式的执行逻辑
+        function runFillMode() {
+            let dataCopy = originalData.map(row => [...row]);
+            const highlightedIndices = new Set();
+            let lastDataRowIndex = -1;
+
+            for (let i = 0; i < dataCopy.length; i++) {
+                if (userRowTypes[i] === 'data') {
+                    // 如果我们找到了一个数据行，并且它前面有一个数据行
+                    if (lastDataRowIndex !== -1) {
+                        const rowA = dataCopy[lastDataRowIndex];
+                        const rowB = dataCopy[i];
+                        const gap = i - lastDataRowIndex;
+
+                        if (gap > 1) { // 只有在两个数据行之间有空隙时才填充
+                            for (let j = 1; j < gap; j++) {
+                                const fillRowIndex = lastDataRowIndex + j;
+                                dataCopy[fillRowIndex] = columnTypes.map((type, k) => {
+                                    if (type === 'number' && typeof rowA[k] === 'number' && typeof rowB[k] === 'number') {
+                                        return rowA[k] + (rowB[k] - rowA[k]) * j / gap;
+                                    }
+                                    return rowA[k]; // 文本列向下填充
+                                });
+                                highlightedIndices.add(fillRowIndex);
+                            }
+                        }
+                    }
+                    lastDataRowIndex = i; // 更新上一个数据行的位置
+                }
+            }
+            processedData = dataCopy;
+            renderTable(processedData, highlightedIndices, true);
+            finishProcessing();
+        }
+
+        function finishProcessing() {
+            updateStatus(`处理完成！总共生成 ${processedData.length} 行数据。`, 'success');
+            startBtn.disabled = false;
+            downloadBtn.disabled = false;
+            copyBtn.disabled = false;
+        }
+
+        // --- UI 渲染 ---
+        function renderTable(data = originalData, highlightedIndices = new Set(), isResult = false) {
+            tableContainer.innerHTML = '';
+            const table = document.createElement('table');
+            table.className = 'w-full data-table';
+            
+            // 创建表头
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            const currentHeaders = [...headers];
+            // 在填充模式的预览阶段，添加“行类型”表头
+            if (currentMode === 'fill' && !isResult) {
+                currentHeaders.unshift('行类型');
+            }
+            currentHeaders.forEach(headerText => {
+                const th = document.createElement('th');
+                th.textContent = headerText;
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+            
+            // 创建表体
+            const tbody = document.createElement('tbody');
+            data.forEach((rowData, index) => {
+                const tr = document.createElement('tr');
+                // 高亮最终结果的内插行
+                if (highlightedIndices.has(index)) tr.classList.add('highlight-row');
+
+                // 在填充模式的预览阶段，添加行类型选择器
+                if (currentMode === 'fill' && !isResult) {
+                    // 高亮预览时的“数据行”
+                    if (userRowTypes[index] === 'data') {
+                        tr.classList.add('data-row-preview');
+                    }
+                    const td = document.createElement('td');
+                    const select = document.createElement('select');
+                    select.className = 'row-type-select';
+                    
+                    // 以编程方式创建选项以获得更好的兼容性 ---
+                    const optionData = document.createElement('option');
+                    optionData.value = 'data';
+                    optionData.textContent = '数据行';
+
+                    const optionFill = document.createElement('option');
+                    optionFill.value = 'fill';
+                    optionFill.textContent = '待填充行';
+
+                    select.appendChild(optionData);
+                    select.appendChild(optionFill);
+
+                    select.value = userRowTypes[index];
+                    select.addEventListener('change', (e) => {
+                        userRowTypes[index] = e.target.value;
+                        // 当用户手动更改类型时，动态更新行的背景色
+                        if (e.target.value === 'data') {
+                            tr.classList.add('data-row-preview');
+                        } else {
+                            tr.classList.remove('data-row-preview');
+                        }
+                    });
+                    td.appendChild(select);
+                    tr.appendChild(td);
+                }
+
+                rowData.forEach(cellData => {
+                    const td = document.createElement('td');
+                    td.textContent = (typeof cellData === 'number') ? Number(cellData.toFixed(4)) : cellData;
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+            tableContainer.appendChild(table);
+        }
+        
+        // --- 状态与UI更新 ---
+        function updateStatus(message, type = 'info') {
+            statusMessage.textContent = message;
+            statusMessage.className = 'text-center text-sm mt-3 '; // Reset classes
+            if (type === 'error') statusMessage.classList.add('text-red-500');
+            else if (type === 'success') statusMessage.classList.add('text-green-500');
+            else statusMessage.classList.add('text-gray-500');
+        }
+
+        function resetState() {
+            originalData = [];
+            headers = [];
+            columnTypes = [];
+            userRowTypes = [];
+            processedData = [];
+            startBtn.disabled = true;
+            downloadBtn.disabled = true;
+            copyBtn.disabled = true;
+            tableContainer.innerHTML = `<div class="flex items-center justify-center h-full text-gray-400"><p>数据显示区域 | 结果将在此处以表格形式呈现</p></div>`;
+            updateStatus('请先提供数据。');
+        }
+
+        // --- 结果导出逻辑 (复制与下载) ---
+        function getResultAsText(separator) {
+            if (processedData.length === 0) return '';
+            return [
+                headers.join(separator),
+                ...processedData.map(row => row.map(cell => (typeof cell === 'number') ? Number(cell.toFixed(6)) : cell).join(separator))
+            ].join('\n');
+        }
+
+        copyBtn.addEventListener('click', () => {
+            const tsvContent = getResultAsText('\t');
+            if (!tsvContent) return;
+            const textarea = document.createElement('textarea');
+            textarea.value = tsvContent;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = 0;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                if(document.execCommand('copy')) updateStatus('结果已成功复制到剪贴板！', 'success');
+                else updateStatus('复制失败。', 'error');
+            } catch (err) { updateStatus('复制失败，您的浏览器可能不支持。', 'error'); }
+            document.body.removeChild(textarea);
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            const csvContent = getResultAsText(',');
+            if (!csvContent) return;
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'processed_data.csv';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
+    </script>
+</body>
+</html>
