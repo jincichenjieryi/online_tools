@@ -129,6 +129,9 @@
                 interpolationCountContainer.style.display = currentMode === 'insert' ? 'flex' : 'none';
                 // 如果已有数据，则重新渲染表格以适应新模式
                 if (originalData.length > 0) {
+                    if (currentMode === 'fill') {
+                        autoDetectUserRowTypes();
+                    }
                     renderTable();
                     updateStatus(`已切换到“${currentMode === 'insert' ? '插入固定行数' : '填充已有空行'}”模式。`, 'info');
                 }
