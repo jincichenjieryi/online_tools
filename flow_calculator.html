@@ -14,7 +14,18 @@
         3、优化断面数据输入框的样式，改为表格形式
         4、水位间隔、曼宁糙率、河道坡降也增加i图标
         5、修改canvas的大小，使其占满容器
+        6、历史断面数据管理下拉菜单，增加编辑功能。
+        7、绘图区增加流速显示
 
+    v3.2.1 
+    更新内容：
+        1、优化保存断面的命名弹窗，以及删除断面的弹窗样式
+        2、水位间隔、曼宁糙率、河道坡降的默认输入值改为灰色提示的样式，点击输入框后，提示消失
+        3、
+        4、水位间隔、曼宁糙率、河道坡降增加i图标说明
+        5、优化canvas的样式，现在可以占满绘图区
+        6、
+        7、
 
     v3.2.0
     更新内容：
@@ -100,13 +111,13 @@
             @apply text-center text-gray-500 py-8 bg-blue-50 border-t border-blue-200;
         }
         #statusMessage { 
-            @apply mt-4 p-4 rounded-md text-sm font-medium shadow-sm;
+            @apply mt-4 p-4 rounded-md text-sm font-medium;
         }
         .error { 
-            @apply bg-red-100 text-red-700;
+            @apply text-red-700;
         }
         .success { 
-            @apply bg-green-100 text-green-700;
+            @apply text-green-700;
         }
         .card {
             @apply bg-white rounded-lg shadow-lg p-6 border border-blue-100
@@ -143,7 +154,7 @@
             min-height: calc(100vh - 200px);
         }
         .left-section {
-            @apply col-span-3 space-y-6;
+            @apply col-span-3 grid grid-rows-[auto_1fr] gap-6;
         }
         .right-section {
             @apply col-span-2 space-y-6;
@@ -253,7 +264,7 @@
                     <div class="highlight-section h-full flex flex-col min-h-[500px]">
                         <div class="step-number">1</div>
                         <h2 class="section-title">基本参数输入</h2>
-                        <div class="space-y-4">
+                        <div class="space-y-2">
                             <div>
                                 <div id="historyDropdown" class="relative">
                                     <button id="historyDropdownButton" type="button" class="input-field flex justify-between items-center w-full text-left">
@@ -313,16 +324,37 @@
                             
                             <div class="param-inputs">
                                 <div class="param-row">
-                                    <label for="waterLevelInterval" class="param-label">水位间隔:</label>
-                                    <input type="number" id="waterLevelInterval" class="param-input" value="0.5" step="0.1">
+                                    <label for="waterLevelInterval" class="param-label">水位间隔
+                                        <span class = "tooltip-container">
+                                            <span class="info-icon">i</span>
+                                            <span class="tooltip-text">
+                                                调整计算的精度，单位为m
+                                            </span>
+                                        </span>
+                                    </label>
+                                    <input type="number" id="waterLevelInterval" class="param-input" placeholder="0.5" step="0.1">
                                 </div>
                                 <div class="param-row">
-                                    <label for="manningN_mc" class="param-label">曼宁糙率系数 (n):</label>
-                                    <input type="number" id="manningN_mc" class="param-input" value="0.03" step="0.001">
+                                    <label for="manningN_mc" class="param-label">曼宁系数(n)
+                                        <span class = "tooltip-container">
+                                            <span class="info-icon">i</span>
+                                            <span class="tooltip-text">
+                                                取值可参考《水力计算手册》
+                                            </span>
+                                        </span>
+                                    </label>
+                                    <input type="number" id="manningN_mc" class="param-input" placeholder="0.03" step="0.001">
                                 </div>
                                 <div class="param-row">
-                                    <label for="channelSlope" class="param-label">河道坡降 (J):</label>
-                                    <input type="number" id="channelSlope" class="param-input" value="0.00177" step="0.0001">
+                                    <label for="channelSlope" class="param-label">河道坡降(J)
+                                        <span class = "tooltip-container">
+                                            <span class="info-icon">i</span>
+                                            <span class="tooltip-text">
+                                                如1‰，则输入0.001
+                                            </span>
+                                        </span>
+                                    </label>
+                                    <input type="number" id="channelSlope" class="param-input" placeholder="0.00177" step="0.0001">
                                 </div>
                             </div>
                         </div>
@@ -420,7 +452,7 @@
                 </div>
 
                 <!-- 下部绘图区域 -->
-                <div class="highlight-section">
+                <div class="highlight-section h-full">
                     <div id="parameterDisplay" class="absolute top-12 left-1/2 -translate-x-1/2 hidden params-box z-10">
                         <div class="param-item">
                             <span>过水面积:</span>
@@ -438,7 +470,7 @@
                             <span>m³/s</span>
                         </div>
                     </div>
-                    <canvas id="crossSectionCanvas" width="800" height="500" class="w-full h-auto"></canvas>
+                    <canvas id="crossSectionCanvas" class="absolute inset-0 w-full h-full"></canvas>
                 </div>
             </div>
 
@@ -630,6 +662,39 @@
         </div>
     </div>
 
+    <!-- 保存断面模态框 -->
+    <div id="saveSectionModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div class="p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">保存断面</h2>
+                <p class="text-sm text-gray-600 mb-4">请输入一个名称来保存当前工作区的断面数据。</p>
+                <div>
+                    <label for="sectionNameInput" class="input-label">断面名称:</label>
+                    <input type="text" id="sectionNameInput" class="input-field" placeholder="例如：某某桥上游断面">
+                </div>
+            </div>
+            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-lg">
+                <button id="confirmSaveBtn" type="button" class="button button-primary">保存</button>
+                <button id="cancelSaveBtn" type="button" class="button bg-gray-400 hover:bg-gray-500">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除断面模态框 -->
+    <div id="deleteConfirmModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div class="p-6 text-center">
+                <svg class="mx-auto mb-4 w-14 h-14 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <h3 class="text-lg font-semibold text-gray-800">确认删除</h3>
+                <p class="mt-2 text-sm text-gray-600">您确定要删除断面 “<span id="sectionNameToDelete" class="font-bold"></span>” 吗？<br>此操作无法撤销。</p>
+            </div>
+            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-lg">
+                <button id="confirmDeleteBtn" type="button" class="button bg-red-600 hover:bg-red-700 focus:ring-red-500">确认删除</button>
+                <button id="cancelDeleteBtn" type="button" class="button bg-gray-400 hover:bg-gray-500">取消</button>
+            </div>
+        </div>
+    </div>
+
     <script>
     // =================================================================================
     // 1. 全局变量和状态管理 (Global Variables & State Management)
@@ -641,6 +706,7 @@
     let rightBankPointIndex = -1; // 右岸顶点的索引
     let hBankfull = -1; // 漫滩临界岸顶高程 (min(YL, YR))
     let resultsData = []; // 存储完整的计算结果对象数组
+    let sectionNameToDeleteState = null;
     const STORAGE_KEY = 'crossSectionHistory'; // 用于localStorage的键名
 
     // 水位流量关系图 (Q-H Plot) 的配置对象
@@ -745,6 +811,10 @@
      * @returns {Object} - 包含 {min, max, tickSpacing} 的对象。
      */
     function calculateAxisParameters(min, max) {
+        if (min === max) {
+            min -= 1;
+            max += 1;
+        }
         const range = calculateNiceNumber(max - min, false);
         const tickSpacing = calculateNiceNumber(range / 8, true); // 期望大约8个刻度
         const niceMin = Math.floor(min / tickSpacing) * tickSpacing;
@@ -1003,6 +1073,18 @@
         const closeChangelogBtn = document.getElementById('closeChangelogBtn');
         const changelogModal = document.getElementById('changelogModal');
 
+        // 保存断面模态框
+        const saveSectionModal = document.getElementById('saveSectionModal');
+        const cancelSaveBtn = document.getElementById('cancelSaveBtn');
+        const confirmSaveBtn = document.getElementById('confirmSaveBtn');
+        const sectionNameInput = document.getElementById('sectionNameInput');
+
+        // 删除断面模态框
+        const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+        const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        const sectionNameToDelete = document.getElementById('sectionNameToDelete');
+
 
         // --------------------------------------------------
         // 7.2 函数具体实现 (因为它们需要访问上面的DOM常量)
@@ -1046,7 +1128,8 @@
             let minY_data = Math.min(...parsedSectionPoints.map(p => p.y));
             let maxY_data = Math.max(...parsedSectionPoints.map(p => p.y));
 
-            let plotMinY = minY_data, plotMaxY = maxY_data;
+            let plotMinY = minY_data;
+            let plotMaxY = maxY_data;
             if (currentWaterLevel !== null) plotMaxY = Math.max(plotMaxY, currentWaterLevel);
 
             if (considerFloodplainEl.checked) {
@@ -1064,11 +1147,9 @@
             const xAxisParams = calculateAxisParameters(minX_data, maxX_data);
             const yAxisParams = calculateAxisParameters(plotMinY, plotMaxY);
             
-            const toCanvasX = (worldX) => padding + (worldX - xAxisParams.min) * (viewWidth / (xAxisParams.max - xAxisParams.min));
-            const toCanvasY = (worldY) => canvas.height / dpr - padding - (worldY - yAxisParams.min) * (viewHeight / (yAxisParams.max - yAxisParams.min));
+            const toCanvasX = (worldX) => padding + (worldX - xAxisParams.min) * (viewWidth / (xAxisParams.max - xAxisParams.min || 1));
+            const toCanvasY = (worldY) => canvas.height / dpr - padding - (worldY - yAxisParams.min) * (viewHeight / (yAxisParams.max - yAxisParams.min || 1));
             
-            // ... (此处省略了详细的绘图代码，与您原文件基本一致) ...
-            // 绘制网格、坐标轴、标签、断面线、点、水位线等
              // 绘制网格线
             ctx.beginPath();
             ctx.strokeStyle = '#f0f9ff'; //更淡的蓝色
@@ -1106,6 +1187,15 @@
             for (let y = yAxisParams.min; y <= yAxisParams.max; y += yAxisParams.tickSpacing) {
                 ctx.fillText(y.toFixed(2), padding - 8, toCanvasY(y) + 4);
             }
+            ctx.save();
+            ctx.translate(padding - 45, canvas.height / dpr / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.textAlign = "center";
+            ctx.fillText("高程 (m)", 0, 0);
+            ctx.restore();
+            ctx.textAlign = "center";
+            ctx.fillText("距离 (m)", canvas.width / dpr / 2, canvas.height/dpr - padding + 40);
+
 
             // 绘制断面线和填充
             ctx.beginPath();
@@ -1133,7 +1223,7 @@
             // 绘制岸顶点
             if (considerFloodplainEl.checked) {
                 [leftBankPointIndex, rightBankPointIndex].forEach(index => {
-                    if (index > -1) {
+                    if (index > -1 && parsedSectionPoints[index]) {
                         const p = parsedSectionPoints[index];
                         ctx.beginPath();
                         ctx.arc(toCanvasX(p.x), toCanvasY(p.y), 6, 0, 2 * Math.PI);
@@ -1180,14 +1270,14 @@
                 paramFlowEl.textContent = selectedData.q;
             }
         }
-        
+        /**
+         * 更新水位流量关系图 (Q-H Plot)。
+         */ 
         updateQHPlot = function() {
-            // ... (此处省略了详细的Q-H图绘制代码，与您原文件基本一致) ...
             if (resultsData.length === 0) {
                  qhCtx.clearRect(0, 0, qhCanvas.width, qhCanvas.height);
                  return;
             }
-            // 与 drawCrossSection 类似，获取dpr, rect, 设置 scale, padding等
             const dpr = window.devicePixelRatio || 1;
             const rect = qhCanvas.getBoundingClientRect();
             qhCanvas.width = rect.width * dpr;
@@ -1196,10 +1286,90 @@
             qhCtx.clearRect(0, 0, qhCanvas.width, qhCanvas.height);
 
             const data = resultsData.map(d => ({ q: parseFloat(d.q), h: parseFloat(d.wl) }));
+            const padding = 60;
+            const viewWidth = qhCanvas.width / dpr - 2 * padding;
+            const viewHeight = qhCanvas.height / dpr - 2 * padding;
 
-            // ... 计算坐标轴范围和转换函数 ...
-            // ... 绘制网格、坐标轴、标签、曲线、数据点等 ...
+            const qMin = Math.min(...data.map(d => d.q));
+            const qMax = Math.max(...data.map(d => d.q));
+            const hMin = Math.min(...data.map(d => d.h));
+            const hMax = Math.max(...data.map(d => d.h));
+
+            const xAxisParams = calculateAxisParameters(qhPlotConfig.xAxis.min ?? qMin, qhPlotConfig.xAxis.max ?? qMax);
+            const yAxisParams = calculateAxisParameters(qhPlotConfig.yAxis.min ?? hMin, qhPlotConfig.yAxis.max ?? hMax);
+
+            const toCanvasX = (worldX) => padding + (worldX - xAxisParams.min) * (viewWidth / (xAxisParams.max - xAxisParams.min || 1));
+            const toCanvasY = (worldY) => qhCanvas.height / dpr - padding - (worldY - yAxisParams.min) * (viewHeight / (yAxisParams.max - yAxisParams.min || 1));
+
+            // ... (绘图代码与 drawCrossSection 类似) ...
+             // 网格
+            qhCtx.beginPath();
+            qhCtx.strokeStyle = '#f0f9ff';
+            qhCtx.lineWidth = 1;
+            for (let x = xAxisParams.min; x <= xAxisParams.max; x += xAxisParams.tickSpacing) {
+                if(xAxisParams.tickSpacing === 0) break;
+                qhCtx.moveTo(toCanvasX(x), padding);
+                qhCtx.lineTo(toCanvasX(x), qhCanvas.height / dpr - padding);
+            }
+            for (let y = yAxisParams.min; y <= yAxisParams.max; y += yAxisParams.tickSpacing) {
+                if(yAxisParams.tickSpacing === 0) break;
+                qhCtx.moveTo(padding, toCanvasY(y));
+                qhCtx.lineTo(qhCanvas.width / dpr - padding, toCanvasY(y));
+            }
+            qhCtx.stroke();
             
+            // 坐标轴
+            qhCtx.beginPath();
+            qhCtx.strokeStyle = '#9ca3af';
+            qhCtx.lineWidth = 1.5;
+            qhCtx.moveTo(padding, qhCanvas.height/dpr - padding);
+            qhCtx.lineTo(qhCanvas.width/dpr - padding, qhCanvas.height/dpr - padding);
+            qhCtx.moveTo(padding, padding);
+            qhCtx.lineTo(padding, qhCanvas.height/dpr - padding);
+            qhCtx.stroke();
+
+            // 标签
+            qhCtx.fillStyle = '#4b5563';
+            qhCtx.font = '12px Inter';
+            qhCtx.textAlign = 'center';
+             for (let x = xAxisParams.min; x <= xAxisParams.max; x += xAxisParams.tickSpacing) {
+                 if(xAxisParams.tickSpacing === 0) break;
+                qhCtx.fillText(x.toFixed(2), toCanvasX(x), qhCanvas.height/dpr - padding + 20);
+            }
+             qhCtx.textAlign = "right";
+            for (let y = yAxisParams.min; y <= yAxisParams.max; y += yAxisParams.tickSpacing) {
+                if(yAxisParams.tickSpacing === 0) break;
+                qhCtx.fillText(y.toFixed(2), padding - 8, toCanvasY(y) + 4);
+            }
+            // 轴标题
+            qhCtx.save();
+            qhCtx.translate(padding - 45, qhCanvas.height / dpr / 2);
+            qhCtx.rotate(-Math.PI / 2);
+            qhCtx.textAlign = "center";
+            qhCtx.fillText("水位 (m)", 0, 0);
+            qhCtx.restore();
+            qhCtx.textAlign = "center";
+            qhCtx.fillText("流量 (m³/s)", qhCanvas.width / dpr / 2, qhCanvas.height/dpr - padding + 40);
+
+            // 曲线
+            qhCtx.beginPath();
+            qhCtx.strokeStyle = '#3b82f6';
+            qhCtx.lineWidth = 2;
+            data.forEach((d, i) => {
+                if (i === 0) qhCtx.moveTo(toCanvasX(d.q), toCanvasY(d.h));
+                else qhCtx.lineTo(toCanvasX(d.q), toCanvasY(d.h));
+            });
+            qhCtx.stroke();
+            
+            // 数据点
+             if (qhPlotConfig.showPoints) {
+                data.forEach(d => {
+                    qhCtx.beginPath();
+                    qhCtx.arc(toCanvasX(d.q), toCanvasY(d.h), 3, 0, 2 * Math.PI);
+                    qhCtx.fillStyle = '#3b82f6';
+                    qhCtx.fill();
+                });
+            }      
         }
 
         // --- 历史记录UI函数的具体实现 ---
@@ -1228,10 +1398,10 @@
 
                 itemEl.querySelector('button').addEventListener('click', (e) => {
                     e.stopPropagation();
-                    if (confirm(`您确定要删除断面 "${section.name}" 吗？`)) {
-                        deleteSection(section.name);
-                        renderSavedSections(); 
-                    }
+                    // 保存要删除的断面名称，并在模态框中显示
+                    sectionNameToDeleteState = section.name;
+                    sectionNameToDelete.textContent = section.name;
+                    deleteConfirmModal.classList.remove('hidden');             
                 });
                 panelEl.appendChild(itemEl);
             });
@@ -1281,17 +1451,104 @@
             handleUpdatePreview(); // 先确保数据是最新的
             if (parsedSectionPoints.length < 2) return;
             
-            // ... (此处为完整的计算逻辑, 与您原文件基本一致) ...
-            // 获取参数, 确定水位范围, 循环计算, 处理漫滩情况, 填充表格, 更新UI
-            const waterLevelStep = parseFloat(waterLevelIntervalEl.value);
-            // ...
+
+            // 1. 获取和验证计算参数
+            // 如果用户没有输入值，则使用placeholder中的默认值
+            const waterLevelStep = parseFloat(waterLevelIntervalEl.value) || parseFloat(waterLevelIntervalEl.placeholder);
+            const n_mc_val = parseFloat(manningN_mc_El.value) || parseFloat(manningN_mc_El.placeholder);
+            const i_val = parseFloat(channelSlopeEl.value) || parseFloat(channelSlopeEl.placeholder);
+            if (isNaN(waterLevelStep) || waterLevelStep <= 0) { setStatusMessage('无效的水位间隔。', true); return; }
+            if (isNaN(n_mc_val) || n_mc_val <= 0) { setStatusMessage('无效的曼宁糙率系数。', true); return; }
+            if (isNaN(i_val) || i_val <= 0) { setStatusMessage('无效的河道坡降。', true); return; }
+            
+            // 2. 确定水位计算范围
+            let startWL, endWL;
+            if (useManualWaterLevelsEl.checked) {
+                startWL = parseFloat(manualStartWLEl.value);
+                endWL = parseFloat(manualEndWLEl.value);
+                if (isNaN(startWL) || isNaN(endWL) || startWL >= endWL) {
+                    setStatusMessage('手动设定的水位范围无效。', true);
+                    return;
+                }
+            } else {
+                const minY_data = Math.min(...parsedSectionPoints.map(p => p.y));
+                const maxY_data = Math.max(...parsedSectionPoints.map(p => p.y));
+                startWL = minY_data;
+                endWL = maxY_data;
+            }
+
+            // 3. 计算临界岸顶高程
+            hBankfull = -1;
+            if (considerFloodplainEl.checked && leftBankPointIndex !== -1 && rightBankPointIndex !== -1) {
+                const leftBankPoint = parsedSectionPoints[leftBankPointIndex];
+                const rightBankPoint = parsedSectionPoints[rightBankPointIndex];
+                hBankfull = Math.min(leftBankPoint.y, rightBankPoint.y);
+            }
+
+            // 4. 循环计算
             resultsData = [];
             resultsTableBody.innerHTML = '';
-            // ... 循环 for (let currentWL = startWL; ... ) ...
-            //      const geom = calculateGeometricProperties(...)
-            //      ...
-            //      resultsData.push({ wl: ..., a: ..., ... })
-            // 渲染结果
+            for (let currentWL = startWL; currentWL <= endWL; currentWL += waterLevelStep) {
+                let A_final = 0, P_final = 0, R_final = 0, Q_final = 0;
+                let remark = "-";
+                let allIntersectionPoints = [];
+                const currentWLFixed = parseFloat(currentWL.toFixed(5));
+
+                if (!considerFloodplainEl.checked || hBankfull === -1) { // 简单河道
+                    const geom = calculateGeometricProperties(parsedSectionPoints, currentWLFixed);
+                    A_final = geom.area;
+                    P_final = geom.bedPerimeter;
+                    allIntersectionPoints = geom.intersectionPoints;
+                } else { // 复式断面
+                    remark = currentWLFixed > hBankfull ? "漫滩" : "主槽";
+                    const n_lfp_val = parseFloat(manningN_lfp_El.value) || n_mc_val;
+                    const n_rfp_val = parseFloat(manningN_rfp_El.value) || n_mc_val;
+                    
+                    const points_mc = parsedSectionPoints.slice(leftBankPointIndex, rightBankPointIndex + 1);
+                    const points_lfp = parsedSectionPoints.slice(0, leftBankPointIndex + 1);
+                    const points_rfp = parsedSectionPoints.slice(rightBankPointIndex);
+
+                    const geom_mc = calculateGeometricProperties(points_mc, currentWLFixed);
+                    const geom_lfp = calculateGeometricProperties(points_lfp, currentWLFixed);
+                    const geom_rfp = calculateGeometricProperties(points_rfp, currentWLFixed);
+
+                    const A_mc = geom_mc.area, P_mc = geom_mc.bedPerimeter;
+                    const A_lfp = geom_lfp.area, P_lfp = geom_lfp.bedPerimeter;
+                    const A_rfp = geom_rfp.area, P_rfp = geom_rfp.bedPerimeter;
+
+                    const R_mc = P_mc > 0 ? A_mc / P_mc : 0;
+                    const R_lfp = P_lfp > 0 ? A_lfp / P_lfp : 0;
+                    const R_rfp = P_rfp > 0 ? A_rfp / P_rfp : 0;
+
+                    const Q_mc = (1/n_mc_val) * A_mc * Math.pow(R_mc, 2/3) * Math.pow(i_val, 1/2);
+                    const Q_lfp = (1/n_lfp_val) * A_lfp * Math.pow(R_lfp, 2/3) * Math.pow(i_val, 1/2);
+                    const Q_rfp = (1/n_rfp_val) * A_rfp * Math.pow(R_rfp, 2/3) * Math.pow(i_val, 1/2);
+                    
+                    A_final = A_mc + A_lfp + A_rfp;
+                    Q_final = Q_mc + Q_lfp + Q_rfp;
+                    P_final = P_mc + P_lfp + P_rfp;
+                    allIntersectionPoints = [...geom_lfp.intersectionPoints, ...geom_mc.intersectionPoints, ...geom_rfp.intersectionPoints]
+                                            .sort((a, b) => a.x - b.x);
+                }
+
+                if (A_final > 0) {
+                    R_final = P_final > 0 ? A_final / P_final : 0;
+                    if (!considerFloodplainEl.checked || hBankfull === -1) {
+                         Q_final = (1 / n_mc_val) * A_final * Math.pow(R_final, 2/3) * Math.pow(i_val, 1/2);
+                    }
+                    resultsData.push({
+                        wl: currentWLFixed.toFixed(3),
+                        a: A_final.toFixed(3),
+                        p: P_final.toFixed(3),
+                        r: R_final.toFixed(3),
+                        q: Q_final.toFixed(3),
+                        rem: remark,
+                        intersectionPoints: allIntersectionPoints
+                    });
+                }
+            }
+ 
+            // 5. 渲染结果
             if (resultsData.length > 0) {
                 resultsData.forEach(data => {
                     const row = resultsTableBody.insertRow();
@@ -1321,16 +1578,11 @@
                 setStatusMessage('断面数据为空，无法保存。', true);
                 return;
             }
-            let name = prompt('请输入断面名称:', `断面 ${new Date().toLocaleString()}`);
-            if (name && name.trim()) {
-                name = name.trim();
-                if (getSavedSections().some(s => s.name === name) && !confirm(`名称 "${name}" 已存在，要覆盖吗？`)) {
-                    return;
-                }
-                saveSection(name, currentData);
-                renderSavedSections();
-                setStatusMessage(`断面 "${name}" 已保存。`, false);
-            }
+
+            // 清空上一次的输入并显示模态框
+            saveSectionModal.classList.remove('hidden'); //显示模态框
+            sectionNameInput.value = '';
+            sectionNameInput.focus(); //自动聚焦到输入框
         }
         
         handleTableRowClick = function(event) {
@@ -1418,6 +1670,18 @@
         document.getElementById('calculateButton').addEventListener('click', handleCalculate);
         document.getElementById('saveSectionButton').addEventListener('click', handleSaveSection);
         document.getElementById('copyResultsButton').addEventListener('click', copyResultsToClipboard);
+        
+        // 岸顶调整按钮
+        document.getElementById('leftBankPrev').addEventListener('click', () => adjustBankPoint('left', -1));
+        document.getElementById('leftBankNext').addEventListener('click', () => adjustBankPoint('left', 1));
+        document.getElementById('rightBankPrev').addEventListener('click', () => adjustBankPoint('right', -1));
+        document.getElementById('rightBankNext').addEventListener('click', () => adjustBankPoint('right', 1));
+        
+        // 查询功能
+        document.getElementById('queryFlowByLevel').addEventListener('click', handleWaterLevelQuery);
+        document.getElementById('queryLevelByFlow').addEventListener('click', handleFlowQuery);
+        document.getElementById('queryWaterLevel').addEventListener('keypress', (e) => e.key === 'Enter' && handleWaterLevelQuery());
+        document.getElementById('queryFlow').addEventListener('keypress', (e) => e.key === 'Enter' && handleFlowQuery());
 
         // 历史记录下拉菜单
         historyDropdownButton.addEventListener('click', () => historyDropdownPanel.classList.toggle('hidden'));
@@ -1433,37 +1697,101 @@
         });
 
         considerFloodplainEl.addEventListener('change', () => {
+            // 显示/隐藏控件
             floodplainControlsEl.classList.toggle('hidden', !considerFloodplainEl.checked);
+            
             if (considerFloodplainEl.checked) {
-                // 建议初始岸顶点
-                leftBankPointIndex = Math.floor(parsedSectionPoints.length / 4);
-                rightBankPointIndex = Math.floor(3 * parsedSectionPoints.length / 4);
+                // 启用漫滩计算时的状态管理
+                if (parsedSectionPoints.length > 0) {
+                    // 只有在第一次启用或岸顶点未设置时才建议初始点
+                    if (leftBankPointIndex === -1 || rightBankPointIndex === -1) {
+                        suggestInitialBankPoints();
+                    }
+                }
+            } else {
+                // 禁用漫滩计算时的状态重置
+                leftBankPointIndex = -1;
+                rightBankPointIndex = -1;
+                hBankfull = -1;
             }
+            
+            // 清除已有的计算结果
+            resultsData = [];
+            resultsTableBody.innerHTML = '';
+            noResultsMessageEl.classList.remove('hidden');
+            document.getElementById('parameterDisplay').classList.add('hidden');
+            setStatusMessage('已切换漫滩计算模式，请重新计算。', false);
+            
+            // 更新界面显示
             updateBankPointInfo();
             drawCrossSection();
         });
-
-        // 岸顶调整按钮
-        document.getElementById('leftBankPrev').addEventListener('click', () => adjustBankPoint('left', -1));
-        document.getElementById('leftBankNext').addEventListener('click', () => adjustBankPoint('left', 1));
-        document.getElementById('rightBankPrev').addEventListener('click', () => adjustBankPoint('right', -1));
-        document.getElementById('rightBankNext').addEventListener('click', () => adjustBankPoint('right', 1));
-        
-        // 查询功能
-        document.getElementById('queryFlowByLevel').addEventListener('click', handleWaterLevelQuery);
-        document.getElementById('queryLevelByFlow').addEventListener('click', handleFlowQuery);
-        document.getElementById('queryWaterLevel').addEventListener('keypress', (e) => e.key === 'Enter' && handleWaterLevelQuery());
-        document.getElementById('queryFlow').addEventListener('keypress', (e) => e.key === 'Enter' && handleFlowQuery());
 
         // 更新记录模态框
         showChangelogBtn.addEventListener('click', () => changelogModal.classList.remove('hidden'));
         closeChangelogBtn.addEventListener('click', () => changelogModal.classList.add('hidden'));
         changelogModal.addEventListener('click', (e) => {
-            if (e.target === changelogModal) changelogModal.classList.add('hidden');
-        });
+            if (e.target === changelogModal) changelogModal.classList.add('hidden'); //点击模态框外部区域关闭模态框
+        }); 
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && !changelogModal.classList.contains('hidden')) {
                 changelogModal.classList.add('hidden');
+            }
+        });
+
+        // 保存断面模态框的交互
+        confirmSaveBtn.addEventListener('click', () => {
+            let name = sectionNameInput.value.trim();
+            if (!name) {
+                alert('断面名称不能为空！');
+                return;
+            }
+            const currentData = sectionDataEl.value.trim();
+            const sections = getSavedSections();
+
+            if (sections.some(s => s.name === name)) {
+                if (!confirm(`断面名称 "${name}" 已存在，是否要覆盖它？`)) {
+                    return; // 用户取消覆盖
+                }
+            }
+
+            saveSection(name, currentData);
+            renderSavedSections();
+            setStatusMessage(`断面 "${name}" 已成功保存。`, false);
+            saveSectionModal.classList.add('hidden');
+        });
+
+        // 点击断面模态框外部区域关闭模态框
+        saveSectionModal.addEventListener('click', (e) => {
+            if (e.target === saveSectionModal) saveSectionModal.classList.add('hidden'); //点击模态框外部区域关闭模态框
+        });
+
+
+        cancelSaveBtn.addEventListener('click', () => {
+            saveSectionModal.classList.add('hidden');
+        });
+
+        // 删除确认模态框的交互
+        confirmDeleteBtn.addEventListener('click', () => {
+            if (sectionNameToDeleteState) {
+                deleteSection(sectionNameToDeleteState);
+                renderSavedSections();
+                setStatusMessage(`断面 "${sectionNameToDeleteState}" 已删除。`, false);
+                sectionNameToDeleteState = null; // 清理状态
+            }
+            deleteConfirmModal.classList.add('hidden');
+        });
+
+        cancelDeleteBtn.addEventListener('click', () => {
+            sectionNameToDeleteState = null; // 清理状态
+            deleteConfirmModal.classList.add('hidden');
+        });
+
+        // 点击删除断面模态框外部区域关闭模态框
+        deleteConfirmModal.addEventListener('click', (e) => {
+            if (e.target === deleteConfirmModal) {
+                sectionNameToDeleteState = null; // 清理状态
+                deleteConfirmModal.classList.add('hidden'); //点击模态框外部区域关闭模态框
             }
         });
 
