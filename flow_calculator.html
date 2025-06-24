@@ -26,6 +26,8 @@
         5、优化canvas的样式，现在可以占满绘图区
         6、
         7、
+        8、优化历史断面管理系统，点击保存按钮后，若选中已有断面，自动切换覆盖模式
+        9、优化保存模态框的交互，增加用户输入断面名字时的检查功能
 
     v3.2.0
     更新内容：
@@ -666,16 +668,22 @@
     <div id="saveSectionModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div class="p-6">
-                <h2 class="text-xl font-bold text-gray-800 mb-4">保存断面</h2>
-                <p class="text-sm text-gray-600 mb-4">请输入一个名称来保存当前工作区的断面数据。</p>
-                <div>
+                <h2 id="saveSectionTitle" class="text-xl font-bold text-gray-800 mb-4"></h2>
+                <p id="saveSectionDescription" class="text-sm text-gray-600 mb-4"></p>
+                
+                <div id="nameInputGroup" class="hidden">
                     <label for="sectionNameInput" class="input-label">断面名称:</label>
                     <input type="text" id="sectionNameInput" class="input-field" placeholder="例如：某某桥上游断面">
                 </div>
+                <div>
+                    <p id="nameInputNotification" class="text-red-600 text-xs mt-2 h-4"></p>
+                </div>
             </div>
             <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-lg">
-                <button id="confirmSaveBtn" type="button" class="button button-primary">保存</button>
-                <button id="cancelSaveBtn" type="button" class="button bg-gray-400 hover:bg-gray-500">取消</button>
+                <button id="OverwriteBtn" type="button" class="button button-primary hidden">覆盖</button>
+                <button id="SaveAsNewBtn" type="button" class="button button-secondary hidden">另存为</button>
+                <button id="SaveBtn" type="button" class="button button-primary hidden">保存</button>
+                <button id="CancelSaveBtn" type="button" class="button bg-gray-400 hover:bg-gray-500">取消</button>
             </div>
         </div>
     </div>
@@ -707,6 +715,7 @@
     let hBankfull = -1; // 漫滩临界岸顶高程 (min(YL, YR))
     let resultsData = []; // 存储完整的计算结果对象数组
     let sectionNameToDeleteState = null;
+    let activeSectionName = null;
     const STORAGE_KEY = 'crossSectionHistory'; // 用于localStorage的键名
 
     // 水位流量关系图 (Q-H Plot) 的配置对象
@@ -1075,9 +1084,15 @@
 
         // 保存断面模态框
         const saveSectionModal = document.getElementById('saveSectionModal');
-        const cancelSaveBtn = document.getElementById('cancelSaveBtn');
-        const confirmSaveBtn = document.getElementById('confirmSaveBtn');
+        const saveSectionTitle = document.getElementById('saveSectionTitle');
+        const saveSectionDescription = document.getElementById('saveSectionDescription');
+        const nameInputGroup = document.getElementById('nameInputGroup');
+        const nameInputNotification = document.getElementById('nameInputNotification');
+        const OverwriteBtn = document.getElementById('OverwriteBtn');
+        const SaveBtn = document.getElementById('SaveBtn');
+        const SaveAsNewBtn = document.getElementById('SaveAsNewBtn');
         const sectionNameInput = document.getElementById('sectionNameInput');
+        const CancelSaveBtn = document.getElementById('CancelSaveBtn');
 
         // 删除断面模态框
         const deleteConfirmModal = document.getElementById('deleteConfirmModal');
@@ -1097,6 +1112,7 @@
             statusMessageEl.classList.add(isError ? 'error' : 'success');
         }
 
+        // --- 更新岸顶点信息函数的具体实现 ---
         updateBankPointInfo = function() {
             const ptL = (leftBankPointIndex !== -1 && parsedSectionPoints[leftBankPointIndex]) ? parsedSectionPoints[leftBankPointIndex] : null;
             const ptR = (rightBankPointIndex !== -1 && parsedSectionPoints[rightBankPointIndex]) ? parsedSectionPoints[rightBankPointIndex] : null;
@@ -1104,6 +1120,7 @@
             leftBankInfoEl.textContent = ptL ? `X:${ptL.x.toFixed(2)}, Y:${ptL.y.toFixed(2)} (点 ${leftBankPointIndex})` : '-';
             rightBankInfoEl.textContent = ptR ? `X:${ptR.x.toFixed(2)}, Y:${ptR.y.toFixed(2)} (点 ${rightBankPointIndex})` : '-';
         }
+
 
         // --- 绘图函数的具体实现 ---
         drawCrossSection = function(currentWaterLevel = null, selectedData = null) {
@@ -1261,7 +1278,6 @@
                 }
             }
 
-
             // 显示参数
             parameterDisplay.classList.toggle('hidden', !selectedData);
             if(selectedData){
@@ -1270,6 +1286,8 @@
                 paramFlowEl.textContent = selectedData.q;
             }
         }
+
+
         /**
          * 更新水位流量关系图 (Q-H Plot)。
          */ 
@@ -1372,6 +1390,7 @@
             }      
         }
 
+
         // --- 历史记录UI函数的具体实现 ---
         renderSavedSections = function() {
             const sections = getSavedSections();
@@ -1382,7 +1401,6 @@
                 panelEl.innerHTML = '<div class="px-4 py-2 text-sm text-gray-500">暂无历史记录</div>';
                 return;
             }
-
             sections.forEach(section => {
                 const itemEl = document.createElement('div');
                 itemEl.className = 'flex justify-between items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 cursor-pointer';
@@ -1393,6 +1411,7 @@
                     historyDropdownLabel.textContent = section.name;
                     historyDropdownLabel.classList.remove('text-gray-500');
                     panelEl.classList.add('hidden');
+                    activeSectionName = section.name; // 记录当前选中的断面名称
                     handleUpdatePreview();
                 });
 
@@ -1408,8 +1427,61 @@
         }
 
 
-        // --- 事件处理函数的具体实现 ---
+        // 显示保存断面模态框
+        function showSaveSectionModal(isOverwrite) {
+            /*
+            isOverwrite=true: 覆盖模式
+            isOverwrite=false: 新建模式
+            */
+            if(isOverwrite) {
+                // 覆盖模式
+                saveSectionTitle.textContent = '保存修改';
+                saveSectionDescription.textContent = `当前断面为 “${activeSectionName}”，请选择是否覆盖`;
 
+                nameInputGroup.classList.add('hidden');
+                OverwriteBtn.classList.remove('hidden');
+                SaveAsNewBtn.classList.remove('hidden');
+                SaveBtn.classList.add('hidden');
+            } else {
+                // 新建模式
+                saveSectionTitle.textContent = '保存新断面';
+                saveSectionDescription.textContent = '请输入断面名称';
+
+                nameInputGroup.classList.remove('hidden');
+                OverwriteBtn.classList.add('hidden');
+                SaveAsNewBtn.classList.add('hidden');
+                SaveBtn.classList.remove('hidden');
+            }
+            saveSectionModal.classList.remove('hidden');
+            sectionNameInput.value = ''; // 清空输入框
+            sectionNameInput.focus(); // 聚焦到输入框
+        }
+
+
+        // 保存断面
+        handleSaveSection = function() {
+            // 初始化
+            sectionNameInput.value = '';
+            nameInputNotification.textContent = '';
+
+            const currentData = sectionDataEl.value.trim();
+            if (!currentData) {
+                setStatusMessage('断面数据为空，无法保存。', true);
+                return;
+            }
+
+            // --- 核心逻辑判断 ---
+            if (activeSectionName) {
+                // 如果当前有活动的断面，说明是编辑模式，显示保存断面模态框
+                showSaveSectionModal(true);
+            } else {
+                // 否则，是新建模式，显示保存断面模态框
+                showSaveSectionModal(false);
+            }
+        }
+        
+
+        // --- 事件处理函数的具体实现 ---
         handleUpdatePreview = function() {
             const data = sectionDataEl.value.trim();
             if (!data) {
@@ -1446,6 +1518,7 @@
             setStatusMessage('断面预览已更新。', false);
             drawCrossSection();
         }
+
 
         handleCalculate = function() {
             handleUpdatePreview(); // 先确保数据是最新的
@@ -1572,19 +1645,6 @@
             }
         }
 
-        handleSaveSection = function() {
-            const currentData = sectionDataEl.value.trim();
-            if (!currentData) {
-                setStatusMessage('断面数据为空，无法保存。', true);
-                return;
-            }
-
-            // 清空上一次的输入并显示模态框
-            saveSectionModal.classList.remove('hidden'); //显示模态框
-            sectionNameInput.value = '';
-            sectionNameInput.focus(); //自动聚焦到输入框
-        }
-        
         handleTableRowClick = function(event) {
             const row = event.currentTarget;
             Array.from(resultsTableBody.rows).forEach(r => r.classList.remove('selected'));
@@ -1683,7 +1743,85 @@
         document.getElementById('queryWaterLevel').addEventListener('keypress', (e) => e.key === 'Enter' && handleWaterLevelQuery());
         document.getElementById('queryFlow').addEventListener('keypress', (e) => e.key === 'Enter' && handleFlowQuery());
 
-        // 历史记录下拉菜单
+        
+        /* ========================= 保存断面模态框的交互======================= */
+        OverwriteBtn.addEventListener('click', () => {
+            const currentData = sectionDataEl.value.trim();
+            if (activeSectionName && currentData) {
+                saveSection(activeSectionName, currentData); // 使用原名称和新数据保存
+                renderSavedSections();
+                nameInputNotification.textContent = `断面 "${activeSectionName}" 已成功覆盖。`;
+            }
+        });
+
+        // "另存为新断面..." 按钮
+        SaveAsNewBtn.addEventListener('click', () => {
+           // 转换模态框到新建模式，而不是关闭模态框
+            showSaveSectionModal(false);
+        });
+
+        // "保存" 按钮
+        SaveBtn.addEventListener('click', () => {
+            const name = sectionNameInput.value.trim();
+            if (!name) {
+                nameInputNotification.classList.remove('hidden');
+                nameInputNotification.textContent = '断面名称不能为空！';
+
+                return;
+            }
+            const currentData = sectionDataEl.value.trim();
+
+            saveSection(name, currentData);
+            renderSavedSections();
+            nameInputNotification.textContent = `断面 "${name}" 已成功保存。`;
+
+            // 更新当前活动断面名称
+            activeSectionName = name;
+            historyDropdownButton.textContent = name;
+            historyDropdownLable.classList.remove('text-gray-500');
+
+            // 关闭模态框
+            saveSectionModal.classList.add('hidden');
+        });
+
+
+        // "取消" 按钮
+        CancelSaveBtn.addEventListener('click', () => {
+            saveSectionModal.classList.add('hidden');
+        });
+
+
+        // 输入框：实时名称校验
+        sectionNameInput.addEventListener('input', () => {
+            const name = sectionNameInput.value.trim();
+            const sections = getSavedSections();
+
+            // 处理特殊情况：输入框为空
+            if (name === '') {
+                nameInputNotification.textContent = '';
+                return;
+            }
+
+            // 核心逻辑：检查名称是否重复
+            if (sections.some(s => s.name === name)) {
+                nameInputNotification.textContent = `名称 "${name}" 已存在，继续将覆盖数据。`;
+                OverwriteBtn.classList.remove('hidden');
+                return;
+            }else{
+                nameInputNotification.textContent = '';
+                OverwriteBtn.classList.add('hidden');
+            }
+        });
+
+        // 点击断面模态框外部区域关闭模态框
+        saveSectionModal.addEventListener('mousedown', (e) => {
+            if (e.target === saveSectionModal) saveSectionModal.classList.add('hidden'); //点击模态框外部区域关闭模态框
+            
+        });
+
+
+        /* ========================= 历史记录下拉菜单的交互======================= */
+
         historyDropdownButton.addEventListener('click', () => historyDropdownPanel.classList.toggle('hidden'));
         window.addEventListener('click', (e) => {
             if (!historyDropdownButton.contains(e.target)) {
@@ -1727,7 +1865,7 @@
             drawCrossSection();
         });
 
-        // 更新记录模态框
+        /* ========================= 更新记录模态框的交互======================= */
         showChangelogBtn.addEventListener('click', () => changelogModal.classList.remove('hidden'));
         closeChangelogBtn.addEventListener('click', () => changelogModal.classList.add('hidden'));
         changelogModal.addEventListener('click', (e) => {
@@ -1739,39 +1877,10 @@
             }
         });
 
-        // 保存断面模态框的交互
-        confirmSaveBtn.addEventListener('click', () => {
-            let name = sectionNameInput.value.trim();
-            if (!name) {
-                alert('断面名称不能为空！');
-                return;
-            }
-            const currentData = sectionDataEl.value.trim();
-            const sections = getSavedSections();
-
-            if (sections.some(s => s.name === name)) {
-                if (!confirm(`断面名称 "${name}" 已存在，是否要覆盖它？`)) {
-                    return; // 用户取消覆盖
-                }
-            }
-
-            saveSection(name, currentData);
-            renderSavedSections();
-            setStatusMessage(`断面 "${name}" 已成功保存。`, false);
-            saveSectionModal.classList.add('hidden');
-        });
-
-        // 点击断面模态框外部区域关闭模态框
-        saveSectionModal.addEventListener('click', (e) => {
-            if (e.target === saveSectionModal) saveSectionModal.classList.add('hidden'); //点击模态框外部区域关闭模态框
-        });
 
 
-        cancelSaveBtn.addEventListener('click', () => {
-            saveSectionModal.classList.add('hidden');
-        });
 
-        // 删除确认模态框的交互
+        /* ========================= 删除断面模态框的交互======================= */
         confirmDeleteBtn.addEventListener('click', () => {
             if (sectionNameToDeleteState) {
                 deleteSection(sectionNameToDeleteState);
