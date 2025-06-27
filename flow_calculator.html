@@ -7,27 +7,20 @@
            开发更新记录 (Internal Changelog)
      ===========================================================================
     
-    v3.2.1
+    v3.4
     计划更新内容：
-        1、优化保存断面的命名弹窗，以及删除断面的弹窗样式
-        2、水位间隔、曼宁糙率、河道坡降的默认输入值改为灰色提示的样式，点击输入框后，提示消失
-        3、优化断面数据输入框的样式，改为表格形式
-        4、水位间隔、曼宁糙率、河道坡降也增加i图标
-        5、修改canvas的大小，使其占满容器
-        6、历史断面数据管理下拉菜单，增加编辑功能。
-        7、绘图区增加流速显示
+        1、优化断面数据输入框的样式，改为表格形式
 
-    v3.2.1 
+
+    v3.3
     更新内容：
         1、优化保存断面的命名弹窗，以及删除断面的弹窗样式
         2、水位间隔、曼宁糙率、河道坡降的默认输入值改为灰色提示的样式，点击输入框后，提示消失
-        3、
-        4、水位间隔、曼宁糙率、河道坡降增加i图标说明
-        5、优化canvas的样式，现在可以占满绘图区
-        6、
-        7、
-        8、优化历史断面管理系统，点击保存按钮后，若选中已有断面，自动切换覆盖模式
-        9、优化保存模态框的交互，增加用户输入断面名字时的检查功能
+        3、水位间隔、曼宁糙率、河道坡降增加i图标说明
+        4、优化canvas的样式，现在可以占满绘图区
+        5、优化历史断面管理系统，点击保存按钮后，若选中已有断面，自动切换覆盖模式
+        6、优化保存模态框的交互，增加用户输入断面名字时的检查功能
+        7、修复：补充了自动推测初始的岸顶点的函数实现。
 
     v3.2.0
     更新内容：
@@ -461,15 +454,20 @@
                             <span class="param-value" id="paramArea">-</span>
                             <span>m²</span>
                         </div>
-                        <div class="param-item">
+                        <!-- <div class="param-item">
                             <span>湿周:</span>
                             <span class="param-value" id="paramPerimeter">-</span>
                             <span>m</span>
-                        </div>
+                        </div> -->
                         <div class="param-item">
                             <span>流量:</span>
                             <span class="param-value" id="paramFlow">-</span>
                             <span>m³/s</span>
+                        </div>
+                        <div class="param-item">
+                            <span>流速:</span>
+                            <span class="param-value" id="paramVelocity">-</span>
+                            <span>m/s</span>
                         </div>
                     </div>
                     <canvas id="crossSectionCanvas" class="absolute inset-0 w-full h-full"></canvas>
@@ -646,6 +644,12 @@
                 <button id="closeChangelogBtn" class="text-3xl text-gray-400 hover:text-gray-800 transition-colors">&times;</button>
             </div>
             <div class="p-6 overflow-y-auto space-y-4">
+                <div>
+                    <h3 class="font-bold text-lg mb-1 text-gray-800">v3.3</h3>
+                    <ul class="list-disc list-inside space-y-1 text-gray-700">
+                        <li>优化：交互功能。</li>
+                    </ul>
+                </div>
                 <div>
                     <h3 class="font-bold text-lg mb-1 text-gray-800">v3.2</h3>
                     <ul class="list-disc list-inside space-y-1 text-gray-700">
@@ -1021,6 +1025,14 @@
     }
     
     /**
+     * 自动推测初始的岸顶（主槽边界）点。
+     * 该函数会在用户首次启用“考虑漫滩计算”时被调用。
+     */
+     function suggestInitialBankPoints() {
+        // ... 函数体在主程序入口部分定义 ...
+     }
+
+    /**
      * 调整岸顶点的位置。
      * @param {string} side - 'left' 或 'right'。
      * @param {number} direction - -1 (左移) 或 1 (右移)。
@@ -1068,7 +1080,7 @@
         const resultsTableBody = document.getElementById('resultsTable').getElementsByTagName('tbody')[0];
         const parameterDisplay = document.getElementById('parameterDisplay');
         const paramAreaEl = document.getElementById('paramArea');
-        const paramPerimeterEl = document.getElementById('paramPerimeter');
+        const paramVelocityEl = document.getElementById('paramVelocity');
         const paramFlowEl = document.getElementById('paramFlow');
         const queryResultTextEl = document.getElementById('queryResultText');
         
@@ -1111,6 +1123,72 @@
             statusMessageEl.className = 'mt-2 p-3 rounded-md text-sm'; // 重置类
             statusMessageEl.classList.add(isError ? 'error' : 'success');
         }
+
+
+        // --- 自动推测初始的岸顶（主槽边界）点函数的具体实现 ---
+        suggestInitialBankPoints = function() {
+            if (parsedSectionPoints.length < 3) return; // 数据点太少，无法分析
+
+            // 1. 找到最低点（深泓点）的索引
+            let minIndex = 0;
+            for (let i = 1; i < parsedSectionPoints.length; i++) {
+                if (parsedSectionPoints[i].y < parsedSectionPoints[minIndex].y) {
+                    minIndex = i;
+                }
+            }
+
+            // 2. 向右搜索右岸顶（寻找最陡峭的上升坡度）
+            let maxSlopeRight = -1;
+            let suggestedRightIndex = parsedSectionPoints.length - 1; // 默认为最右侧点
+
+            // 遍历最低点右侧的所有线段
+            for (let i = minIndex; i < parsedSectionPoints.length - 1; i++) {
+                const p1 = parsedSectionPoints[i];
+                const p2 = parsedSectionPoints[i + 1];
+                const dx = p2.x - p1.x;
+                // 避免除以零，并确保我们只关心上升的坡岸
+                if (dx > 0 && p2.y > p1.y) {
+                    const slope = (p2.y - p1.y) / dx;
+                    if (slope > maxSlopeRight) {
+                        maxSlopeRight = slope;
+                        // 我们选择这个最陡峭线段的终点（较高的点）作为岸顶
+                        suggestedRightIndex = i + 1;
+                    }
+                }
+            }
+            
+            // 3. 向左搜索左岸顶（寻找最陡峭的上升坡度，即坡度值最“负”）
+            let minSlopeLeft = 1;
+            let suggestedLeftIndex = 0; // 默认为最左侧点
+
+            // 遍历最低点左侧的所有线段
+            for (let i = minIndex; i > 0; i--) {
+                const p1 = parsedSectionPoints[i - 1];
+                const p2 = parsedSectionPoints[i];
+                const dx = p2.x - p1.x;
+                // 避免除以零，并确保我们只关心上升的坡岸 (p1.y > p2.y)
+                if (dx > 0 && p1.y > p2.y) {
+                    const slope = (p2.y - p1.y) / dx; // 此时坡度为负
+                    if (slope < minSlopeLeft) {
+                        minSlopeLeft = slope;
+                        // 我们选择这个最陡峭线段的终点（较高的点, 即p1）作为岸顶
+                        suggestedLeftIndex = i - 1;
+                    }
+                }
+            }
+
+            // 4. 更新全局状态
+            // 进行一次最终检查，确保左岸顶在右岸顶的左侧
+            if (suggestedLeftIndex < suggestedRightIndex) {
+                leftBankPointIndex = suggestedLeftIndex;
+                rightBankPointIndex = suggestedRightIndex;
+            } else {
+                // 如果出现异常情况（例如河道形状非常奇特），则使用默认的左右端点
+                leftBankPointIndex = 0;
+                rightBankPointIndex = parsedSectionPoints.length - 1;
+            }
+        }
+
 
         // --- 更新岸顶点信息函数的具体实现 ---
         updateBankPointInfo = function() {
@@ -1282,7 +1360,7 @@
             parameterDisplay.classList.toggle('hidden', !selectedData);
             if(selectedData){
                 paramAreaEl.textContent = selectedData.a;
-                paramPerimeterEl.textContent = selectedData.p;
+                paramVelocityEl.textContent = selectedData.v;
                 paramFlowEl.textContent = selectedData.q;
             }
         }
@@ -1562,7 +1640,7 @@
             resultsData = [];
             resultsTableBody.innerHTML = '';
             for (let currentWL = startWL; currentWL <= endWL; currentWL += waterLevelStep) {
-                let A_final = 0, P_final = 0, R_final = 0, Q_final = 0;
+                let A_final = 0, P_final = 0, R_final = 0, Q_final = 0, V_final = 0;
                 let remark = "-";
                 let allIntersectionPoints = [];
                 const currentWLFixed = parseFloat(currentWL.toFixed(5));
@@ -1596,25 +1674,32 @@
                     const Q_mc = (1/n_mc_val) * A_mc * Math.pow(R_mc, 2/3) * Math.pow(i_val, 1/2);
                     const Q_lfp = (1/n_lfp_val) * A_lfp * Math.pow(R_lfp, 2/3) * Math.pow(i_val, 1/2);
                     const Q_rfp = (1/n_rfp_val) * A_rfp * Math.pow(R_rfp, 2/3) * Math.pow(i_val, 1/2);
+
+                    const V_mc = Q_mc / A_mc;
+                    const V_lfp = Q_lfp / A_lfp;
+                    const V_rfp = Q_rfp / A_rfp;
                     
                     A_final = A_mc + A_lfp + A_rfp;
                     Q_final = Q_mc + Q_lfp + Q_rfp;
                     P_final = P_mc + P_lfp + P_rfp;
+                    V_final = A_final > 0 ? Q_final / A_final : 0;
                     allIntersectionPoints = [...geom_lfp.intersectionPoints, ...geom_mc.intersectionPoints, ...geom_rfp.intersectionPoints]
-                                            .sort((a, b) => a.x - b.x);
+                    .sort((a, b) => a.x - b.x);
                 }
-
+                
                 if (A_final > 0) {
                     R_final = P_final > 0 ? A_final / P_final : 0;
                     if (!considerFloodplainEl.checked || hBankfull === -1) {
-                         Q_final = (1 / n_mc_val) * A_final * Math.pow(R_final, 2/3) * Math.pow(i_val, 1/2);
+                        Q_final = (1 / n_mc_val) * A_final * Math.pow(R_final, 2/3) * Math.pow(i_val, 1/2);
+                        V_final = A_final > 0 ? Q_final / A_final : 0;
                     }
                     resultsData.push({
                         wl: currentWLFixed.toFixed(3),
-                        a: A_final.toFixed(3),
-                        p: P_final.toFixed(3),
-                        r: R_final.toFixed(3),
-                        q: Q_final.toFixed(3),
+                        a: A_final.toFixed(2),
+                        p: P_final.toFixed(2),
+                        r: R_final.toFixed(2),
+                        q: Q_final.toFixed(2),
+                        v: V_final.toFixed(2),
                         rem: remark,
                         intersectionPoints: allIntersectionPoints
                     });
@@ -1631,6 +1716,7 @@
                     row.insertCell().textContent = data.p;
                     row.insertCell().textContent = data.r;
                     row.insertCell().textContent = data.q;
+                    row.insertCell().textContent = data.v;
                     const remarkCell = row.insertCell();
                     remarkCell.textContent = data.rem;
                     remarkCell.className = data.rem === "漫滩" ? 'remark-flood' : 'remark-main';
