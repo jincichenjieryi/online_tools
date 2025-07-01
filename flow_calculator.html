@@ -10,7 +10,10 @@
     v3.4
     计划更新内容：
         1、优化断面数据输入框的样式，改为表格形式
-
+    v3.4
+    更新内容：
+        1、新增：断面图放大功能
+        2、新增：可关闭水力参数浮窗
 
     v3.3
     更新内容：
@@ -159,7 +162,7 @@
         }
         .params-box {
             @apply bg-gradient-to-r from-blue-50 to-blue-100 backdrop-blur-sm py-2 px-4 rounded-lg 
-            shadow-sm border border-blue-200 flex items-center justify-start space-x-4 text-sm;
+            shadow-sm border border-blue-200 items-center justify-start space-x-4 text-sm;
         }
         .param-item {
             @apply flex items-center space-x-2 text-blue-800;
@@ -239,6 +242,20 @@
         .tooltip-container:hover .tooltip-text {
             visibility: visible;
             opacity: 1;
+        }
+
+        /* 可调节大小的窗口样式 */
+        #enlargedViewWindow.resizable {
+            position: absolute;
+            resize: both; /* 关键：允许用户在水平和垂直方向上调整大小 */
+            overflow: auto; /* 关键：必须和 resize 属性一起使用 */
+            min-width: 400px; /* 限制窗口不会被缩得太小 */
+            min-height: 300px;
+        }
+
+        /* 隐藏浏览器为 textarea 等元素默认添加的 resize 图标 */
+        #enlargedViewWindow.resizable::-webkit-resizer {
+            display: none;
         }
     </style>
 </head>
@@ -447,8 +464,14 @@
                 </div>
 
                 <!-- 下部绘图区域 -->
-                <div class="highlight-section h-full">
-                    <div id="parameterDisplay" class="absolute top-12 left-1/2 -translate-x-1/2 hidden params-box z-10">
+                <div class="highlight-section h-full min-h-[500px]">
+                    <button id="fullscreenBtn" title="全屏切换" class="absolute top-4 right-4 z-20 p-2 rounded-full bg-white/70 backdrop-blur-sm hover:bg-blue-100 transition-colors">
+                        <svg id="fullscreenIconOpen" class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 1v4m0 0h-4m4 0l-5-5"></path></svg>
+                        <svg id="fullscreenIconClose" class="w-5 h-5 text-gray-600 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 10V4m0 0h-6M18 4l-7 7m-5 4v6m0 0h6m-6 0l7-7"></path></svg>
+                    </button>
+
+                    <div id="parameterDisplay" class="absolute top-12 left-1/2 -translate-x-1/2 hidden params-box z-10 flex">
+                        <button id="closeParamsBtn" title="关闭" class="absolute -top-2 -right-2 w-5 h-5 flex items-center justify-center bg-red-500 text-white rounded-full text-xs hover:bg-red-600">&times;</button>
                         <div class="param-item">
                             <span>过水面积:</span>
                             <span class="param-value" id="paramArea">-</span>
@@ -637,6 +660,18 @@
         </div>
     </div>
     
+    <!-- 断面图放大模态框 -->
+    <div id="enlargedViewModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40">
+        <div id="enlargedViewWindow" class="resizable shadow-2xl rounded-lg bg-white flex flex-col" style="width: 60vw; height: 70vh; top: 15vh; left: 20vw;">
+            <div id="enlargedViewHeader" class="bg-gray-100 p-2 border-b border-gray-300 cursor-move flex justify-between items-center">
+                <span class="font-bold text-gray-700">断面图详情</span>
+                <button id="closeEnlargedViewBtn" title="关闭" class="w-7 h-7 flex items-center justify-center bg-red-500 text-white rounded-full hover:bg-red-600">&times;</button>
+            </div>
+                <div id="enlargedViewContent" class="flex-grow relative bg-gray-50">
+            </div>
+        </div>
+    </div>
+
     <!-- 更新记录模态框 -->
     <div id="changelogModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 transition-opacity duration-300">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
@@ -721,6 +756,7 @@
     let resultsData = []; // 存储完整的计算结果对象数组
     let sectionNameToDeleteState = null;
     let activeSectionName = null;
+    let isParamsManuallyClosed = false; // 用于跟踪水力参数浮窗是否被手动关闭,false表示未关闭,true表示关闭
     const STORAGE_KEY = 'crossSectionHistory'; // 用于localStorage的键名
 
     // 水位流量关系图 (Q-H Plot) 的配置对象
@@ -1052,10 +1088,27 @@
         // --------------------------------------------------
         // 7.1 DOM元素常量定义
         // --------------------------------------------------
+        // 绘图区域
         const canvas = document.getElementById('crossSectionCanvas');
         const ctx = canvas.getContext('2d');
         const qhCanvas = document.getElementById('qhCanvas');
         const qhCtx = qhCanvas.getContext('2d');
+
+        // 绘图区放大功能
+        const enlargedViewModal = document.getElementById('enlargedViewModal');
+        const enlargedViewWindow = document.getElementById('enlargedViewWindow');
+        const enlargedViewHeader = document.getElementById('enlargedViewHeader');
+        const enlargedViewContent = document.getElementById('enlargedViewContent');
+        const closeEnlargedViewBtn = document.getElementById('closeEnlargedViewBtn');
+        const originalCanvasContainer = document.querySelector('#crossSectionCanvas').parentElement;
+        const enlargeBtn = document.getElementById('fullscreenBtn'); 
+
+        // 绘图区上方水力参数浮窗
+        const closeParamsBtn = document.getElementById('closeParamsBtn'); // 参数浮窗关闭逻辑
+        const parameterDisplay = document.getElementById('parameterDisplay');
+        const paramAreaEl = document.getElementById('paramArea');
+        const paramVelocityEl = document.getElementById('paramVelocity');
+        const paramFlowEl = document.getElementById('paramFlow');
 
         // 输入元素
         const sectionDataEl = document.getElementById('sectionData');
@@ -1079,10 +1132,6 @@
         const statusMessageEl = document.getElementById('statusMessage');
         const noResultsMessageEl = document.getElementById('noResultsMessage');
         const resultsTableBody = document.getElementById('resultsTable').getElementsByTagName('tbody')[0];
-        const parameterDisplay = document.getElementById('parameterDisplay');
-        const paramAreaEl = document.getElementById('paramArea');
-        const paramVelocityEl = document.getElementById('paramVelocity');
-        const paramFlowEl = document.getElementById('paramFlow');
         const queryResultTextEl = document.getElementById('queryResultText');
         
         // 历史记录下拉菜单
@@ -1357,15 +1406,36 @@
                 }
             }
 
-            // 显示参数
-            parameterDisplay.classList.toggle('hidden', !selectedData);
-            if(selectedData){
+            
+            if (selectedData && !isParamsManuallyClosed) { // 如果水力参数浮窗未被手动关闭，则显示水力参数浮窗
+                parameterDisplay.classList.remove('hidden');
                 paramAreaEl.textContent = selectedData.a;
                 paramVelocityEl.textContent = selectedData.v;
                 paramFlowEl.textContent = selectedData.q;
+            } else {
+                parameterDisplay.classList.add('hidden');
             }
         }
 
+        /**
+         * 辅助函数：根据当前状态重绘断面图Canvas
+         * 它会检查是否有选中的结果行，并用其数据来重绘
+         */
+        function redrawCanvas() {
+            const selectedRow = resultsTableBody.querySelector('tr.selected');
+            if (selectedRow) {
+                // 如果有选中的行，则找到对应的数据来重绘
+                const rowIndex = Array.from(resultsTableBody.rows).indexOf(selectedRow);
+                if (resultsData[rowIndex]) {
+                    const selectedData = resultsData[rowIndex];
+                    drawCrossSection(parseFloat(selectedData.wl), selectedData);
+                    return; // 完成重绘
+                }
+            }
+            
+            // 如果没有选中的行，或者找不到数据，就只重绘基础的断面图
+            drawCrossSection();
+        }
 
         /**
          * 更新水位流量关系图 (Q-H Plot)。
@@ -1598,7 +1668,7 @@
             drawCrossSection();
         }
 
-
+        // 核心计算函数，使用曼宁公式计算流量
         handleCalculate = function() {
             handleUpdatePreview(); // 先确保数据是最新的
             if (parsedSectionPoints.length < 2) return;
@@ -1732,6 +1802,7 @@
             }
         }
 
+        // 点击表格行，更新绘图区
         handleTableRowClick = function(event) {
             const row = event.currentTarget;
             Array.from(resultsTableBody.rows).forEach(r => r.classList.remove('selected'));
@@ -1743,6 +1814,7 @@
             drawCrossSection(parseFloat(selectedData.wl), selectedData);
         }
 
+        // 查询水位对应的流量
         handleWaterLevelQuery = function() {
             // ... (与您原文件逻辑一致) ...
             const waterLevel = parseFloat(document.getElementById('queryWaterLevel').value);
@@ -1758,6 +1830,7 @@
             queryResultTextEl.classList.remove('hidden');
         }
 
+        // 查询流量对应的水位
         handleFlowQuery = function() {
             // ... (与您原文件逻辑一致) ...
              const flow = parseFloat(document.getElementById('queryFlow').value);
@@ -1773,6 +1846,7 @@
             queryResultTextEl.classList.remove('hidden');
         }
 
+        // 复制结果到剪贴板
         copyResultsToClipboard = function() {
             if (resultsTableBody.rows.length === 0) {
                 setStatusMessage('没有结果可以复制。', true);
@@ -1789,6 +1863,7 @@
             });
         }
         
+        // 调整岸顶点
         adjustBankPoint = function(side, direction) {
             if (!considerFloodplainEl.checked || parsedSectionPoints.length === 0) return;
             
@@ -1830,7 +1905,87 @@
         document.getElementById('queryWaterLevel').addEventListener('keypress', (e) => e.key === 'Enter' && handleWaterLevelQuery());
         document.getElementById('queryFlow').addEventListener('keypress', (e) => e.key === 'Enter' && handleFlowQuery());
 
+        /* ========================= 水力参数浮窗关闭逻辑======================= */
+        closeParamsBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // 防止事件冒泡
+            isParamsManuallyClosed = true; // 设置标志为手动关闭
+            parameterDisplay.classList.add('hidden');
+        });
         
+        /* ========================= 绘图区全屏功能======================= */
+
+        // --- 1. 打开和关闭窗口的逻辑 ---
+        enlargeBtn.addEventListener('click', () => {
+            // 将主Canvas移动到放大窗口中
+            enlargedViewContent.appendChild(canvas);
+            enlargedViewModal.classList.remove('hidden');
+            // 以新尺寸重绘Canvas
+            setTimeout(redrawCanvas, 50);
+        });
+
+        closeEnlargedViewBtn.addEventListener('click', () => {
+            // 将主Canvas移回其原来的家
+            originalCanvasContainer.appendChild(canvas);
+            enlargedViewModal.classList.add('hidden');
+            // 以小尺寸重绘Canvas
+            setTimeout(redrawCanvas, 50);
+        });
+
+
+        // --- 2. 监听窗口大小变化并重绘的逻辑 ---
+        // 创建一个防抖函数，防止在拖拽过程中频繁重绘
+        function debounce(func, delay) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+        const debouncedRedraw = debounce(redrawCanvas, 100);
+
+        // 使用 ResizeObserver 来高效地监听尺寸变化
+        const resizeObserver = new ResizeObserver(() => {
+            debouncedRedraw();
+        });
+        resizeObserver.observe(enlargedViewContent);
+
+
+        // --- 3. 实现窗口拖拽的逻辑 ---
+        let isDragging = false;
+        let offsetX, offsetY;
+
+        enlargedViewHeader.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            // 计算鼠标指针与窗口左上角的偏移
+            offsetX = e.clientX - enlargedViewWindow.offsetLeft;
+            offsetY = e.clientY - enlargedViewWindow.offsetTop;
+            // 改变鼠标样式
+            enlargedViewHeader.style.cursor = 'grabbing';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            // 根据鼠标位置和偏移量，计算窗口新的 top 和 left
+            const newTop = e.clientY - offsetY;
+            const newLeft = e.clientX - offsetX;
+            enlargedViewWindow.style.top = `${newTop}px`;
+            enlargedViewWindow.style.left = `${newLeft}px`;
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            enlargedViewHeader.style.cursor = 'move';
+        });
+
+        // 点击断面图放大模态框外部区域关闭模态框
+        enlargedViewModal.addEventListener('mousedown', (e) => {
+            if (e.target === enlargedViewModal) enlargedViewModal.classList.add('hidden'); //点击模态框外部区域关闭模态框
+            // 将主Canvas移回其原来的家
+            originalCanvasContainer.appendChild(canvas);
+            // 以小尺寸重绘Canvas
+            setTimeout(redrawCanvas, 50);
+        });
+
         /* ========================= 保存断面模态框的交互======================= */
         OverwriteBtn.addEventListener('click', () => {
             const currentData = sectionDataEl.value.trim();
@@ -1903,7 +2058,6 @@
         // 点击断面模态框外部区域关闭模态框
         saveSectionModal.addEventListener('mousedown', (e) => {
             if (e.target === saveSectionModal) saveSectionModal.classList.add('hidden'); //点击模态框外部区域关闭模态框
-            
         });
 
 
@@ -1916,11 +2070,13 @@
             }
         });
 
-        // 计算选项
+        /* ========================= 计算选项的交互======================= */
+        // 手动输入水位
         useManualWaterLevelsEl.addEventListener('change', () => {
             manualWaterLevelControlsEl.classList.toggle('hidden', !useManualWaterLevelsEl.checked);
         });
 
+        // 漫滩计算
         considerFloodplainEl.addEventListener('change', () => {
             // 显示/隐藏控件
             floodplainControlsEl.classList.toggle('hidden', !considerFloodplainEl.checked);
